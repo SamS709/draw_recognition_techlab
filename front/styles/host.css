@@ -1,0 +1,137 @@
+:root {
+  --bg: linear-gradient(135deg, #fdf8ef 0%, #effaf6 45%, #f0f2ff 100%);
+  --panel: rgba(255, 255, 255, 0.9);
+  --text: #17202b;
+  --muted: #5a6672;
+  --accent: #0d8a72;
+  --accent-2: #f18f01;
+  --border: rgba(23, 32, 43, 0.15);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  padding: 14px;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.top {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 12px;
+  box-shadow: 0 16px 42px rgba(20, 33, 50, 0.1);
+}
+
+.headline {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 34px);
+  letter-spacing: 0.02em;
+}
+
+.timer {
+  font-size: clamp(30px, 5vw, 58px);
+  font-weight: 800;
+  color: var(--accent);
+  min-width: 140px;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button.secondary { background: white; color: var(--accent); }
+
+.boards {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.board {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.board header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.board h2 { margin: 0; }
+
+.canvas-wrap { padding: 10px; }
+
+canvas {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border: 2px dashed rgba(13, 138, 114, 0.35);
+  border-radius: 12px;
+  background: white;
+}
+
+.pred {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  color: var(--muted);
+  min-height: 96px;
+}
+
+.pred ol {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 5px;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .top { grid-template-columns: 1fr; }
+  .timer { text-align: left; }
+  .boards { grid-template-columns: 1fr; }
+  .controls { justify-content: flex-start; }
+}

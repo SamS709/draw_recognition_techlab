@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Drawing</title>
+  <link rel="stylesheet" href="/styles/player.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="draw-area">
+      <header class="header">
+        <h1 id="player-title">Player</h1>
+        <span class="pill" id="category-pill">Category: waiting...</span>
+      </header>
+      <canvas id="canvas" width="900" height="900"></canvas>
+      <div class="controls">
+        <button id="clear-btn" class="secondary" type="button">Clear</button>
+        <button id="undo-btn" class="secondary" type="button">Undo Stroke</button>
+        <button id="send-btn" type="button">Force Predict</button>
+      </div>
+      <p class="status" id="network-status">Connecting...</p>
+    </section>
+
+    <aside class="side">
+      <article class="card">
+        <h2>Top Predictions</h2>
+        <ol id="predictions" class="prediction-list">
+          <li>Draw to start predictions</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h2>Round Timer</h2>
+        <p id="timer-text">Not running</p>
+      </article>
+      <article class="card">
+        <h2>Tips</h2>
+        <p class="status">Use one clear object. Big shapes first, details later.</p>
+      </article>
+    </aside>
+  </main>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const VIRTUAL_CANVAS_SIZE = 900;
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const playerId = Number(pathParts[pathParts.length - 1]) || 1;
+
+    const socket = io({ transports: ["websocket", "polling"] });
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const statusEl = document.getElementById("network-status");
+    const categoryPill = document.getElementById("category-pill");
+    const predictionsEl = document.getElementById("predictions");
+    const timerText = document.getElementById("timer-text");
+    const playerTitle = document.getElementById("player-title");
+
+    playerTitle.textContent = `Player ${playerId}`;
+
+    let strokes = [];
+    let currentStroke = [];
+    let drawing = false;
+    let predictDebounce = null;
+    let roundEndMs = null;
+
+    function getLogicalSize() {
+      const dpr = window.devicePixelRatio || 1;
+      return {
+        width: canvas.width / dpr,
+        height: canvas.height / dpr,
+        dpr,
+      };
+    }
+
+    function fitCanvasToDisplay() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      if (!rect.width || !rect.height) return;
+      canvas.width = Math.max(1, Math.round(rect.width * dpr));
+      canvas.height = Math.max(1, Math.round(rect.height * dpr));
+      redrawAll();
+    }
+
+    function getPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      return {
+        nx: Math.min(1, Math.max(0, x)),
+        ny: Math.min(1, Math.max(0, y)),
+      };
+    }
+
+    function drawSegment(a, b) {
+      const { width, height } = getLogicalSize();
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(a.nx * width, a.ny * height);
+      ctx.lineTo(b.nx * width, b.ny * height);
+      ctx.stroke();
+    }
+
+    function redrawAll() {
+      const { width, height, dpr } = getLogicalSize();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      for (const stroke of strokes) {
+        for (let i = 1; i < stroke.length; i += 1) {
+          drawSegment(stroke[i - 1], stroke[i]);
+        }
+      }
+      if (currentStroke.length > 1) {
+        for (let i = 1; i < currentStroke.length; i += 1) {
+          drawSegment(currentStroke[i - 1], currentStroke[i]);
+        }
+      }
+    }
+
+    function flattenPoints() {
+      const all = [];
+      for (const stroke of strokes) {
+        stroke.forEach((pt, index) => {
+          all.push({
+            x: Math.round(pt.nx * VIRTUAL_CANVAS_SIZE),
+            y: Math.round(pt.ny * VIRTUAL_CANVAS_SIZE),
+            pen: index === stroke.length - 1 ? 1 : 0,
+          });
+        });
+      }
+      return all;
+    }
+
+    function sendDrawingUpdate(triggerPrediction = false) {
+      const points = flattenPoints();
+      socket.emit("player_state", { playerId, points });
+      if (triggerPrediction && points.length > 4) {
+        socket.emit("predict_request", { playerId, points });
+      }
+    }
+
+    function schedulePrediction() {
+      if (predictDebounce) clearTimeout(predictDebounce);
+      predictDebounce = setTimeout(() => sendDrawingUpdate(true), 300);
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      drawing = true;
+      canvas.setPointerCapture(event.pointerId);
+      currentStroke = [getPoint(event)];
+      redrawAll();
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!drawing) return;
+      const point = getPoint(event);
+      const prev = currentStroke[currentStroke.length - 1];
+      currentStroke.push(point);
+      if (prev) drawSegment(prev, point);
+    });
+
+    function endStroke() {
+      if (!drawing) return;
+      drawing = false;
+      if (currentStroke.length > 0) {
+        strokes.push(currentStroke);
+        currentStroke = [];
+        sendDrawingUpdate(false);
+        schedulePrediction();
+      }
+      redrawAll();
+    }
+
+    canvas.addEventListener("pointerup", endStroke);
+    canvas.addEventListener("pointercancel", endStroke);
+    canvas.addEventListener("pointerleave", endStroke);
+
+    document.getElementById("clear-btn").addEventListener("click", () => {
+      strokes = [];
+      currentStroke = [];
+      redrawAll();
+      sendDrawingUpdate(false);
+    });
+
+    document.getElementById("undo-btn").addEventListener("click", () => {
+      strokes.pop();
+      redrawAll();
+      sendDrawingUpdate(false);
+      schedulePrediction();
+    });
+
+    document.getElementById("send-btn").addEventListener("click", () => {
+      sendDrawingUpdate(true);
+    });
+
+    socket.on("connect", () => {
+      statusEl.textContent = `Connected (${socket.id})`;
+      socket.emit("join_role", { role: "player", playerId });
+    });
+
+    socket.on("disconnect", () => {
+      statusEl.textContent = "Disconnected. Reconnecting...";
+    });
+
+    socket.on("round_state", (payload) => {
+      const category = payload.category || "waiting...";
+      categoryPill.textContent = `Category: ${category}`;
+      if (payload.remainingSeconds != null) {
+        timerText.textContent = `${payload.remainingSeconds}s left`;
+      }
+      roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
+    });
+
+    setInterval(() => {
+      if (!roundEndMs) {
+        return;
+      }
+      const left = Math.max(0, Math.ceil((roundEndMs - Date.now()) / 1000));
+      timerText.textContent = `${left}s left`;
+      if (left === 0) {
+        roundEndMs = null;
+      }
+    }, 250);
+
+    socket.on("prediction_update", (payload) => {
+      if (payload.playerId !== playerId) return;
+      const top = payload.top || [];
+      if (!top.length) return;
+      predictionsEl.innerHTML = "";
+      for (const row of top) {
+        const li = document.createElement("li");
+        const conf = `${(row.confidence * 100).toFixed(1)}%`;
+        li.textContent = `${row.category} (${conf})`;
+        predictionsEl.appendChild(li);
+      }
+    });
+
+    window.addEventListener("resize", fitCanvasToDisplay);
+    fitCanvasToDisplay();
+  </script>
+</body>
+</html>
