@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Draw Duel Host</title>
+  <link rel="stylesheet" href="/styles/colors.css" />
   <link rel="stylesheet" href="/styles/host.css" />
 </head>
 <body>
@@ -43,107 +44,6 @@
   </main>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script>
-    const VIRTUAL_CANVAS_SIZE = 900;
-    const socket = io({ transports: ["websocket", "polling"] });
-    const timerEl = document.getElementById("timer");
-    const categoryEl = document.getElementById("category");
-
-    const canvas1 = document.getElementById("canvas-1");
-    const canvas2 = document.getElementById("canvas-2");
-    const ctx1 = canvas1.getContext("2d");
-    const ctx2 = canvas2.getContext("2d");
-    let roundEndMs = null;
-
-    function redraw(canvas, ctx, points) {
-      const ratio = window.devicePixelRatio || 1;
-      const width = canvas.clientWidth || 700;
-      const height = canvas.clientHeight || width;
-      canvas.width = Math.floor(width * ratio);
-      canvas.height = Math.floor(height * ratio);
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = "#111";
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      for (let i = 1; i < points.length; i += 1) {
-        const a = points[i - 1];
-        const b = points[i];
-        if (a.pen === 1) {
-          continue;
-        }
-        const ax = (a.x / VIRTUAL_CANVAS_SIZE) * width;
-        const ay = (a.y / VIRTUAL_CANVAS_SIZE) * height;
-        const bx = (b.x / VIRTUAL_CANVAS_SIZE) * width;
-        const by = (b.y / VIRTUAL_CANVAS_SIZE) * height;
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.lineTo(bx, by);
-        ctx.stroke();
-      }
-    }
-
-    function setPrediction(playerId, top) {
-      const container = document.getElementById(`pred-${playerId}`);
-      container.innerHTML = "";
-      if (!top || !top.length) {
-        const li = document.createElement("li");
-        li.textContent = "No prediction";
-        container.appendChild(li);
-        return;
-      }
-      top.forEach((item) => {
-        const li = document.createElement("li");
-        li.textContent = `${item.category} (${(item.confidence * 100).toFixed(1)}%)`;
-        container.appendChild(li);
-      });
-    }
-
-    socket.on("connect", () => {
-      socket.emit("join_role", { role: "host" });
-    });
-
-    socket.on("player_presence", (payload) => {
-      const label = document.getElementById(`p${payload.playerId}-status`);
-      if (label) label.textContent = payload.connected ? "Connected" : "Disconnected";
-    });
-
-    socket.on("player_drawing", (payload) => {
-      if (payload.playerId === 1) redraw(canvas1, ctx1, payload.points || []);
-      if (payload.playerId === 2) redraw(canvas2, ctx2, payload.points || []);
-    });
-
-    socket.on("prediction_update", (payload) => {
-      setPrediction(payload.playerId, payload.top || []);
-    });
-
-    socket.on("round_state", (payload) => {
-      categoryEl.textContent = `Category: ${payload.category || "waiting..."}`;
-      if (payload.remainingSeconds != null) {
-        timerEl.textContent = `${payload.remainingSeconds}s`;
-      }
-      roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
-    });
-
-    setInterval(() => {
-      if (!roundEndMs) {
-        return;
-      }
-      const left = Math.max(0, Math.ceil((roundEndMs - Date.now()) / 1000));
-      timerEl.textContent = `${left}s`;
-      if (left === 0) {
-        roundEndMs = null;
-      }
-    }, 250);
-
-    document.getElementById("start-btn").addEventListener("click", () => {
-      socket.emit("host_start_round", { durationSeconds: 60 });
-    });
-
-    document.getElementById("reset-btn").addEventListener("click", () => {
-      socket.emit("host_reset_round");
-    });
-  </script>
+  <script src="/js/host.js"></script>
 </body>
 </html>

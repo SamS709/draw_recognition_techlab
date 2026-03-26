@@ -84,6 +84,11 @@ def player_page(player_id):
 def styles_file(filename):
     return send_from_directory(os.path.join(FRONT_DIR, 'styles'), filename)
 
+
+@app.route('/js/<path:filename>')
+def js_file(filename):
+    return send_from_directory(os.path.join(FRONT_DIR, 'js'), filename)
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:

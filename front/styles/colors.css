@@ -1,0 +1,17 @@
+:root {
+  /* Core palette in RGB for easy tweaking */
+  --blue-rgb: 24, 96, 210;
+  --yellow-rgb: 250, 205, 64;
+  --white-rgb: 255, 255, 255;
+
+  /* Shared semantic tokens */
+  --bg: rgb(var(--white-rgb));
+  --panel: rgb(var(--white-rgb));
+  --text: rgb(20, 35, 64);
+  --muted: rgba(20, 35, 64, 0.72);
+  --accent: rgb(var(--blue-rgb));
+  --accent-2: rgb(var(--yellow-rgb));
+  --accent-soft: rgb(var(--yellow-rgb));
+  --border: rgba(var(--blue-rgb), 0.34);
+  --danger: rgb(var(--blue-rgb));
+}

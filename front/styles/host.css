@@ -1,13 +1,3 @@
-:root {
-  --bg: linear-gradient(135deg, #fdf8ef 0%, #effaf6 45%, #f0f2ff 100%);
-  --panel: rgba(255, 255, 255, 0.9);
-  --text: #17202b;
-  --muted: #5a6672;
-  --accent: #0d8a72;
-  --accent-2: #f18f01;
-  --border: rgba(23, 32, 43, 0.15);
-}
-
 * { box-sizing: border-box; }
 
 body {
@@ -36,7 +26,7 @@ body {
   border-radius: 14px;
   background: var(--panel);
   padding: 12px;
-  box-shadow: 0 16px 42px rgba(20, 33, 50, 0.1);
+  box-shadow: 0 16px 42px rgba(var(--blue-rgb), 0.2);
 }
 
 .headline {
@@ -63,7 +53,7 @@ body {
 button {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: white;
+  color: rgb(var(--white-rgb));
   font: inherit;
   font-weight: 700;
   padding: 8px 12px;
@@ -71,7 +61,7 @@ button {
   cursor: pointer;
 }
 
-button.secondary { background: white; color: var(--accent); }
+button.secondary { background: rgb(var(--white-rgb)); color: var(--accent); }
 
 .boards {
   display: grid;
@@ -104,9 +94,9 @@ button.secondary { background: white; color: var(--accent); }
 canvas {
   width: 100%;
   aspect-ratio: 1/1;
-  border: 2px dashed rgba(13, 138, 114, 0.35);
+  border: 2px dashed rgba(var(--blue-rgb), 0.4);
   border-radius: 12px;
-  background: white;
+  background: rgb(var(--white-rgb));
 }
 
 .pred {
@@ -114,6 +104,7 @@ canvas {
   padding: 10px 12px;
   color: var(--muted);
   min-height: 96px;
+  background: rgb(var(--white-rgb));
 }
 
 .pred ol {

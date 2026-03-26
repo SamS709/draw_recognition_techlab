@@ -1,14 +1,3 @@
-:root {
-  --bg: radial-gradient(circle at 0% 0%, #f2fff6 0%, #f4f8ff 45%, #fff4ef 100%);
-  --panel: rgba(255, 255, 255, 0.92);
-  --text: #1d1f2f;
-  --muted: #5f6478;
-  --accent: #126e82;
-  --accent-soft: #e3f5f8;
-  --danger: #d64045;
-  --border: rgba(29, 31, 47, 0.14);
-}
-
 * { box-sizing: border-box; }
 
 body {
@@ -27,7 +16,7 @@ body {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 16px 45px rgba(30, 37, 58, 0.12);
+  box-shadow: 0 16px 45px rgba(var(--blue-rgb), 0.2);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -53,9 +42,9 @@ h1, h2 { margin: 0; }
 #canvas {
   width: 100%;
   touch-action: none;
-  border: 2px dashed rgba(18, 110, 130, 0.35);
+  border: 2px dashed rgba(var(--blue-rgb), 0.4);
   border-radius: 14px;
-  background: white;
+  background: rgb(var(--white-rgb));
   aspect-ratio: 1 / 1;
   max-height: min(76vh, 760px);
 }
@@ -66,14 +55,14 @@ h1, h2 { margin: 0; }
   display: grid;
   gap: 14px;
   align-content: start;
-  background: linear-gradient(180deg, #fff 0%, #f6fbff 100%);
+  background: rgb(var(--yellow-rgb));
 }
 
 .card {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
-  background: white;
+  background: rgb(var(--white-rgb));
   display: grid;
   gap: 8px;
 }
@@ -95,7 +84,7 @@ h1, h2 { margin: 0; }
 button {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: white;
+  color: rgb(var(--white-rgb));
   padding: 9px 12px;
   border-radius: 10px;
   font: inherit;
@@ -104,7 +93,7 @@ button {
 }
 
 button.secondary {
-  background: white;
+  background: rgb(var(--yellow-rgb));
   color: var(--accent);
 }
 
