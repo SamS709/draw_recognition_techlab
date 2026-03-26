@@ -10,6 +10,7 @@ const categoryPill = document.getElementById("category-pill");
 const predictionsEl = document.getElementById("predictions");
 const timerText = document.getElementById("timer-text");
 const playerTitle = document.getElementById("player-title");
+const readyBtn = document.getElementById("ready-btn");
 
 playerTitle.textContent = `Player ${playerId}`;
 
@@ -18,6 +19,16 @@ let currentStroke = [];
 let drawing = false;
 let predictDebounce = null;
 let roundEndMs = null;
+let isReady = false;
+let inGame = false;
+let waitingForLevelSelection = false;
+
+function showDrawToStartPredictions() {
+  predictionsEl.innerHTML = "";
+  const li = document.createElement("li");
+  li.textContent = "Draw to start predictions";
+  predictionsEl.appendChild(li);
+}
 
 function getLogicalSize() {
   const dpr = window.devicePixelRatio || 1;
@@ -102,6 +113,17 @@ function schedulePrediction() {
   predictDebounce = setTimeout(() => sendDrawingUpdate(true), 300);
 }
 
+function refreshReadyButton() {
+  readyBtn.textContent = isReady ? "Ready ✓" : "Ready";
+  readyBtn.classList.toggle("secondary", !isReady);
+  readyBtn.disabled = inGame || waitingForLevelSelection;
+}
+
+function setReady(nextReady) {
+  isReady = Boolean(nextReady);
+  refreshReadyButton();
+}
+
 canvas.addEventListener("pointerdown", (event) => {
   drawing = true;
   canvas.setPointerCapture(event.pointerId);
@@ -138,17 +160,29 @@ document.getElementById("clear-btn").addEventListener("click", () => {
   currentStroke = [];
   redrawAll();
   sendDrawingUpdate(false);
+  showDrawToStartPredictions();
 });
 
 document.getElementById("undo-btn").addEventListener("click", () => {
   strokes.pop();
   redrawAll();
   sendDrawingUpdate(false);
-  schedulePrediction();
+  const points = flattenPoints();
+  if (points.length > 0) {
+    socket.emit("predict_request", { playerId, points });
+  } else {
+    showDrawToStartPredictions();
+  }
 });
 
 document.getElementById("send-btn").addEventListener("click", () => {
   sendDrawingUpdate(true);
+});
+
+readyBtn.addEventListener("click", () => {
+  const next = !isReady;
+  setReady(next);
+  socket.emit("player_ready", { playerId, ready: next });
 });
 
 socket.on("connect", () => {
@@ -158,15 +192,59 @@ socket.on("connect", () => {
 
 socket.on("disconnect", () => {
   statusEl.textContent = "Disconnected. Reconnecting...";
+  setReady(false);
+  waitingForLevelSelection = false;
+  refreshReadyButton();
+});
+
+socket.on("ai_level_required", (payload) => {
+  if (playerId !== 1) {
+    return;
+  }
+
+  waitingForLevelSelection = true;
+  refreshReadyButton();
+
+  const allowedLevels = Array.isArray(payload?.levels) && payload.levels.length
+    ? payload.levels
+    : ["Bad", "Good", "Expert"];
+  const defaultLevel = allowedLevels.includes("Good") ? "Good" : allowedLevels[0];
+  const promptText = `Choose AI level: ${allowedLevels.join(", ")}`;
+  const answer = window.prompt(promptText, defaultLevel);
+
+  let selectedLevel = defaultLevel;
+  if (answer && answer.trim()) {
+    const normalized = allowedLevels.find((item) => item.toLowerCase() === answer.trim().toLowerCase());
+    if (normalized) {
+      selectedLevel = normalized;
+    }
+  }
+
+  socket.emit("select_ai_level", { level: selectedLevel });
+  waitingForLevelSelection = false;
+  refreshReadyButton();
+});
+
+socket.on("player_ready_update", (payload) => {
+  if (payload.playerId !== playerId) return;
+  setReady(payload.ready);
 });
 
 socket.on("round_state", (payload) => {
   const category = payload.category || "waiting...";
   categoryPill.textContent = `Category: ${category}`;
+  inGame = payload.remainingSeconds != null && payload.remainingSeconds > 0;
+  if (inGame) {
+    setReady(false);
+    waitingForLevelSelection = false;
+  }
   if (payload.remainingSeconds != null) {
     timerText.textContent = `${payload.remainingSeconds}s left`;
+  } else {
+    timerText.textContent = "Not running";
   }
   roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
+  refreshReadyButton();
 });
 
 setInterval(() => {
@@ -176,14 +254,19 @@ setInterval(() => {
   const left = Math.max(0, Math.ceil((roundEndMs - Date.now()) / 1000));
   timerText.textContent = `${left}s left`;
   if (left === 0) {
+    inGame = false;
     roundEndMs = null;
+    refreshReadyButton();
   }
 }, 250);
 
 socket.on("prediction_update", (payload) => {
   if (payload.playerId !== playerId) return;
   const top = payload.top || [];
-  if (!top.length) return;
+  if (!top.length) {
+    showDrawToStartPredictions();
+    return;
+  }
   predictionsEl.innerHTML = "";
   for (const row of top) {
     const li = document.createElement("li");
@@ -195,3 +278,4 @@ socket.on("prediction_update", (payload) => {
 
 window.addEventListener("resize", fitCanvasToDisplay);
 fitCanvasToDisplay();
+refreshReadyButton();

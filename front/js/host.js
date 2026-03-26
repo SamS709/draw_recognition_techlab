@@ -8,6 +8,26 @@ const canvas2 = document.getElementById("canvas-2");
 const ctx1 = canvas1.getContext("2d");
 const ctx2 = canvas2.getContext("2d");
 let roundEndMs = null;
+let inGame = false;
+const playerState = {
+  1: { connected: false, ready: false },
+  2: { connected: false, ready: false },
+};
+
+function refreshPlayerStatus(playerId) {
+  const state = playerState[playerId];
+  const label = document.getElementById(`p${playerId}-status`);
+  if (!label) return;
+  if (!state.connected) {
+    label.textContent = "Disconnected - Not Ready";
+    return;
+  }
+  if (inGame) {
+    label.textContent = "Connected - In game";
+    return;
+  }
+  label.textContent = state.ready ? "Connected - Ready" : "Connected - Not Ready";
+}
 
 function redraw(canvas, ctx, points) {
   const ratio = window.devicePixelRatio || 1;
@@ -43,7 +63,7 @@ function setPrediction(playerId, top) {
   container.innerHTML = "";
   if (!top || !top.length) {
     const li = document.createElement("li");
-    li.textContent = "No prediction";
+    li.textContent = "Draw to start predictions";
     container.appendChild(li);
     return;
   }
@@ -59,8 +79,18 @@ socket.on("connect", () => {
 });
 
 socket.on("player_presence", (payload) => {
-  const label = document.getElementById(`p${payload.playerId}-status`);
-  if (label) label.textContent = payload.connected ? "Connected" : "Disconnected";
+  if (!playerState[payload.playerId]) return;
+  playerState[payload.playerId].connected = Boolean(payload.connected);
+  if (!payload.connected) {
+    playerState[payload.playerId].ready = false;
+  }
+  refreshPlayerStatus(payload.playerId);
+});
+
+socket.on("player_ready_update", (payload) => {
+  if (!playerState[payload.playerId]) return;
+  playerState[payload.playerId].ready = Boolean(payload.ready);
+  refreshPlayerStatus(payload.playerId);
 });
 
 socket.on("player_drawing", (payload) => {
@@ -73,11 +103,18 @@ socket.on("prediction_update", (payload) => {
 });
 
 socket.on("round_state", (payload) => {
-  categoryEl.textContent = `Category: ${payload.category || "waiting..."}`;
+  const levelText = payload.aiLevel ? ` | AI: ${payload.aiLevel}` : "";
+  categoryEl.textContent = `Category: ${payload.category || "waiting..."}${levelText}`;
   if (payload.remainingSeconds != null) {
     timerEl.textContent = `${payload.remainingSeconds}s`;
   }
   roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
+  inGame = payload.remainingSeconds != null && payload.remainingSeconds > 0;
+  refreshPlayerStatus(1);
+  refreshPlayerStatus(2);
+  if (payload.remainingSeconds == null) {
+    timerEl.textContent = "Waiting";
+  }
 });
 
 setInterval(() => {
@@ -87,14 +124,9 @@ setInterval(() => {
   const left = Math.max(0, Math.ceil((roundEndMs - Date.now()) / 1000));
   timerEl.textContent = `${left}s`;
   if (left === 0) {
+    inGame = false;
     roundEndMs = null;
+    refreshPlayerStatus(1);
+    refreshPlayerStatus(2);
   }
 }, 250);
-
-document.getElementById("start-btn").addEventListener("click", () => {
-  socket.emit("host_start_round", { durationSeconds: 60 });
-});
-
-document.getElementById("reset-btn").addEventListener("click", () => {
-  socket.emit("host_reset_round");
-});
