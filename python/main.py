@@ -19,7 +19,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 @app.route('/')
 def index_page():
-    return send_from_directory(FRONT_DIR, 'index.html')
+    return send_from_directory(FRONT_DIR, 'host.html')
 
 
 @app.route('/host')
@@ -31,7 +31,7 @@ def host_page():
 def player_page(player_id):
     if player_id not in (1, 2):
         return jsonify({"error": "player_id must be 1 or 2"}), 400
-    return send_from_directory(FRONT_DIR, 'player.html')
+    return send_from_directory(FRONT_DIR, 'host.html')
 
 
 @app.route('/styles/<path:filename>')

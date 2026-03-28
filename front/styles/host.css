@@ -75,7 +75,7 @@ button.secondary { background: rgb(var(--white-rgb)); color: var(--accent); }
   background: var(--panel);
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
 }
 
 .board header {
@@ -97,6 +97,21 @@ canvas {
   border: 2px dashed rgba(var(--blue-rgb), 0.4);
   border-radius: 12px;
   background: rgb(var(--white-rgb));
+  touch-action: none;
+}
+
+.player-controls {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgb(var(--white-rgb));
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .pred {

@@ -21,10 +21,16 @@
       <article class="board">
         <header>
           <h2>Player 1</h2>
-          <p class="status" id="p1-status">Disconnected</p>
+          <p class="status" id="p1-status">Disconnected - Not Ready</p>
         </header>
         <div class="canvas-wrap">
           <canvas id="canvas-1" width="900" height="900"></canvas>
+        </div>
+        <div class="player-controls">
+          <button id="ready-btn-1" type="button">Ready</button>
+          <button id="clear-btn-1" class="secondary" type="button">Clear</button>
+          <button id="undo-btn-1" class="secondary" type="button">Undo Stroke</button>
+          <button id="send-btn-1" type="button">Force Predict</button>
         </div>
         <div class="pred"><ol id="pred-1"><li>Waiting for drawing</li></ol></div>
       </article>
@@ -32,10 +38,16 @@
       <article class="board">
         <header>
           <h2>Player 2</h2>
-          <p class="status" id="p2-status">Disconnected</p>
+          <p class="status" id="p2-status">Disconnected - Not Ready</p>
         </header>
         <div class="canvas-wrap">
           <canvas id="canvas-2" width="900" height="900"></canvas>
+        </div>
+        <div class="player-controls">
+          <button id="ready-btn-2" type="button">Ready</button>
+          <button id="clear-btn-2" class="secondary" type="button">Clear</button>
+          <button id="undo-btn-2" class="secondary" type="button">Undo Stroke</button>
+          <button id="send-btn-2" type="button">Force Predict</button>
         </div>
         <div class="pred"><ol id="pred-2"><li>Waiting for drawing</li></ol></div>
       </article>
