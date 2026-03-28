@@ -197,6 +197,53 @@ socket.on("disconnect", () => {
   refreshReadyButton();
 });
 
+
+
+// Modal for AI level selection
+let aiLevelModal = document.getElementById("ai-level-modal");
+if (!aiLevelModal) {
+  aiLevelModal = document.createElement("div");
+  aiLevelModal.id = "ai-level-modal";
+  aiLevelModal.style.position = "fixed";
+  aiLevelModal.style.top = "0";
+  aiLevelModal.style.left = "0";
+  aiLevelModal.style.width = "100vw";
+  aiLevelModal.style.height = "100vh";
+  aiLevelModal.style.background = "rgba(0,0,0,0.4)";
+  aiLevelModal.style.display = "none";
+  aiLevelModal.style.justifyContent = "center";
+  aiLevelModal.style.alignItems = "center";
+  aiLevelModal.style.zIndex = "1000";
+  aiLevelModal.innerHTML = `
+    <div id="ai-level-modal-content" style="background: #fff; padding: 32px 24px; border-radius: 12px; min-width: 260px; box-shadow: 0 2px 16px #0002; text-align: center;">
+      <div id="ai-level-modal-title" style="font-size: 1.2em; margin-bottom: 18px;">Choose the AI level</div>
+      <div id="ai-level-modal-buttons" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;"></div>
+    </div>
+  `;
+  document.body.appendChild(aiLevelModal);
+}
+
+function showAiLevelButtons(levels, onSelect) {
+  const modal = aiLevelModal;
+  const btnContainer = modal.querySelector("#ai-level-modal-buttons");
+  btnContainer.innerHTML = "";
+  levels.forEach((level) => {
+    const btn = document.createElement("button");
+    btn.textContent = level;
+    btn.className = "ai-level-btn";
+    btn.style.margin = "0 8px";
+    btn.style.padding = "8px 20px";
+    btn.style.fontSize = "1.1em";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => {
+      modal.style.display = "none";
+      onSelect(level);
+    };
+    btnContainer.appendChild(btn);
+  });
+  modal.style.display = "flex";
+}
+
 socket.on("ai_level_required", (payload) => {
   if (playerId !== 1) {
     return;
@@ -208,21 +255,12 @@ socket.on("ai_level_required", (payload) => {
   const allowedLevels = Array.isArray(payload?.levels) && payload.levels.length
     ? payload.levels
     : ["Bad", "Good", "Expert"];
-  const defaultLevel = allowedLevels.includes("Good") ? "Good" : allowedLevels[0];
-  const promptText = `Choose AI level: ${allowedLevels.join(", ")}`;
-  const answer = window.prompt(promptText, defaultLevel);
 
-  let selectedLevel = defaultLevel;
-  if (answer && answer.trim()) {
-    const normalized = allowedLevels.find((item) => item.toLowerCase() === answer.trim().toLowerCase());
-    if (normalized) {
-      selectedLevel = normalized;
-    }
-  }
-
-  socket.emit("select_ai_level", { level: selectedLevel });
-  waitingForLevelSelection = false;
-  refreshReadyButton();
+  showAiLevelButtons(allowedLevels, (selectedLevel) => {
+    socket.emit("select_ai_level", { level: selectedLevel });
+    waitingForLevelSelection = false;
+    refreshReadyButton();
+  });
 });
 
 socket.on("player_ready_update", (payload) => {
