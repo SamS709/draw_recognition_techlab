@@ -3,14 +3,34 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 from back.game_state import (
     game_state, SID_TO_PLAYER, PLAYER_TO_SID,
-    remaining_seconds, round_active, request_ai_level_from_player_one,
+    round_active, request_ai_level_from_player_one,
     emit_ready_state, start_round, round_payload, predict_from_points
 )
+from back.model_utils import AI_LEVELS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 FRONT_DIR = os.path.join(PROJECT_ROOT, "front")
 
+DEFAULT_AI_LEVEL = "Good"
+AI_LEVEL_ROUND_SECONDS = {
+    "Bad": 18,
+    "Good": 12,
+    "Expert": 8,
+}
+
+
+def normalize_ai_level(value):
+    requested_level = str(value or DEFAULT_AI_LEVEL)
+    return next(
+        (level for level in AI_LEVELS if level.lower() == requested_level.lower()),
+        DEFAULT_AI_LEVEL,
+    )
+
+
+def round_duration_for_level(level):
+    fallback = AI_LEVEL_ROUND_SECONDS[DEFAULT_AI_LEVEL]
+    return int(AI_LEVEL_ROUND_SECONDS.get(level, fallback))
 
 
 app = Flask(__name__)
@@ -19,18 +39,11 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 @app.route('/')
 def index_page():
-    return send_from_directory(FRONT_DIR, 'host.html')
+    return send_from_directory(FRONT_DIR, 'home.html')
 
 
 @app.route('/host')
 def host_page():
-    return send_from_directory(FRONT_DIR, 'host.html')
-
-
-@app.route('/player/<int:player_id>')
-def player_page(player_id):
-    if player_id not in (1, 2):
-        return jsonify({"error": "player_id must be 1 or 2"}), 400
     return send_from_directory(FRONT_DIR, 'host.html')
 
 
@@ -44,15 +57,18 @@ def js_file(filename):
     return send_from_directory(os.path.join(FRONT_DIR, 'js'), filename)
 
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        stroke_data = request.json
-        points = stroke_data.get("points", [])
-        return jsonify(predict_from_points(points))
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+@app.route('/game-config')
+def game_config():
+    timer_by_level = {
+        level: round_duration_for_level(level)
+        for level in AI_LEVELS
+    }
+    default_level = normalize_ai_level(DEFAULT_AI_LEVEL)
+    return jsonify({
+        "levels": list(AI_LEVELS),
+        "defaultLevel": default_level,
+        "timerByLevel": timer_by_level,
+    })
 
 
 @socketio.on('join_role')
@@ -159,33 +175,8 @@ def on_select_ai_level(payload):
     if not (game_state["players"][1]["ready"] and game_state["players"][2]["ready"]):
         return
 
-    requested_level = str(payload.get("level", "Good"))
-    from back.model_utils import AI_LEVELS, ROUND_DURATION_SECONDS
-    normalized_level = next((level for level in AI_LEVELS if level.lower() == requested_level.lower()), "Good")
-    start_round(ROUND_DURATION_SECONDS, ai_level=normalized_level)
-
-
-@socketio.on('host_start_round')
-def on_host_start_round(payload):
-    duration = int(payload.get("durationSeconds", 60))
-    start_round(duration, ai_level="Good")
-
-
-@socketio.on('host_reset_round')
-def on_host_reset_round():
-    game_state["category"] = None
-    game_state["round_end"] = None
-    game_state["ai_level"] = None
-    game_state["awaiting_ai_level"] = False
-    game_state["players"][1]["points"] = []
-    game_state["players"][2]["points"] = []
-    game_state["players"][1]["ready"] = False
-    game_state["players"][2]["ready"] = False
-    emit('round_state', round_payload(), broadcast=True)
-    emit_ready_state(1, broadcast=True)
-    emit_ready_state(2, broadcast=True)
-    emit('player_drawing', {"playerId": 1, "points": []}, broadcast=True)
-    emit('player_drawing', {"playerId": 2, "points": []}, broadcast=True)
+    normalized_level = normalize_ai_level(payload.get("level", DEFAULT_AI_LEVEL))
+    start_round(round_duration_for_level(normalized_level), ai_level=normalized_level)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

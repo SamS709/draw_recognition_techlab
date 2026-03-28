@@ -2,9 +2,10 @@ import random
 import time
 from flask_socketio import emit
 from ml.utils import Data
-from .model_utils import get_models_for_level, AI_LEVELS, ROUND_DURATION_SECONDS
+from .model_utils import get_models_for_level, AI_LEVELS
 
 data = Data()
+DEFAULT_AI_LEVEL = "Good"
 
 SID_TO_PLAYER = {}
 PLAYER_TO_SID = {1: None, 2: None}
@@ -12,6 +13,7 @@ PLAYER_TO_SID = {1: None, 2: None}
 game_state = {
     "category": None,
     "round_end": None,
+    "round_duration_seconds": None,
     "ai_level": None,
     "awaiting_ai_level": False,
     "players": {
@@ -26,6 +28,7 @@ def remaining_seconds():
     left = int(game_state["round_end"] - time.time())
     if left <= 0:
         game_state["round_end"] = None
+        game_state["round_duration_seconds"] = None
         game_state["category"] = None
         game_state["ai_level"] = None
         game_state["awaiting_ai_level"] = False
@@ -39,7 +42,10 @@ def request_ai_level_from_player_one():
     sid = PLAYER_TO_SID.get(1)
     if not sid:
         return
-    emit('ai_level_required', {"levels": list(AI_LEVELS)}, to=sid)
+    emit('ai_level_required', {
+        "levels": list(AI_LEVELS),
+        "defaultLevel": DEFAULT_AI_LEVEL,
+    }, to=sid)
     game_state["awaiting_ai_level"] = True
 
 def emit_ready_state(player_id, broadcast=True):
@@ -52,9 +58,11 @@ def emit_ready_state(player_id, broadcast=True):
         broadcast=broadcast,
     )
 
-def start_round(duration=ROUND_DURATION_SECONDS, ai_level="Good"):
+def start_round(duration, ai_level="Good"):
+    round_seconds = max(3, int(duration))
     game_state["category"] = random.choice(data.cats)
-    game_state["round_end"] = time.time() + max(10, int(duration))
+    game_state["round_end"] = time.time() + round_seconds
+    game_state["round_duration_seconds"] = round_seconds
     game_state["ai_level"] = ai_level if ai_level in AI_LEVELS else "Good"
     game_state["awaiting_ai_level"] = False
     for pid in (1, 2):
@@ -73,6 +81,7 @@ def round_payload():
         "category": game_state["category"],
         "remainingSeconds": remaining_seconds(),
         "roundEnd": game_state["round_end"],
+        "roundDurationSeconds": game_state["round_duration_seconds"],
         "aiLevel": game_state["ai_level"],
     }
 

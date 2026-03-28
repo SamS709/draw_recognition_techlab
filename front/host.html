@@ -11,9 +11,10 @@
   <main class="app">
     <section class="top">
       <h1 class="headline" id="category">Category: waiting...</h1>
-      <div class="timer" id="timer">60s</div>
+      <div class="timer" id="timer">10s</div>
       <div class="controls">
-        <p class="status" id="ready-hint">Round starts when both players are Ready</p>
+        <p class="status" id="ready-hint">Round starts after both players confirm Ready in the popup</p>
+        <p class="status" id="ai-level-info">AI Level: Good</p>
       </div>
     </section>
 
@@ -27,7 +28,6 @@
           <canvas id="canvas-1" width="900" height="900"></canvas>
         </div>
         <div class="player-controls">
-          <button id="ready-btn-1" type="button">Ready</button>
           <button id="clear-btn-1" class="secondary" type="button">Clear</button>
           <button id="undo-btn-1" class="secondary" type="button">Undo Stroke</button>
           <button id="send-btn-1" type="button">Force Predict</button>
@@ -44,7 +44,6 @@
           <canvas id="canvas-2" width="900" height="900"></canvas>
         </div>
         <div class="player-controls">
-          <button id="ready-btn-2" type="button">Ready</button>
           <button id="clear-btn-2" class="secondary" type="button">Clear</button>
           <button id="undo-btn-2" class="secondary" type="button">Undo Stroke</button>
           <button id="send-btn-2" type="button">Force Predict</button>

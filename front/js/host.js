@@ -1,14 +1,28 @@
 const VIRTUAL_CANVAS_SIZE = 900;
+const DEFAULT_READY_HINT = "Round starts after both players confirm Ready in the popup";
+
+const urlLevel = new URLSearchParams(window.location.search).get("level");
+const storedLevel = localStorage.getItem("selectedAiLevel");
+let selectedAiLevel = urlLevel || storedLevel || "Good";
+localStorage.setItem("selectedAiLevel", selectedAiLevel);
 
 const socketP1 = io({ transports: ["websocket", "polling"] });
 const socketP2 = io({ transports: ["websocket", "polling"] });
 
 const timerEl = document.getElementById("timer");
 const categoryEl = document.getElementById("category");
+const aiLevelInfoEl = document.getElementById("ai-level-info");
+const readyHintEl = document.getElementById("ready-hint");
+
+if (aiLevelInfoEl) {
+  aiLevelInfoEl.textContent = `AI Level: ${selectedAiLevel}`;
+}
+if (readyHintEl) {
+  readyHintEl.textContent = DEFAULT_READY_HINT;
+}
 
 let roundEndMs = null;
 let inGame = false;
-let waitingForLevelSelection = false;
 
 function makePlayerController(playerId, socket, canvasId, buttonIds) {
   const canvas = document.getElementById(canvasId);
@@ -18,7 +32,6 @@ function makePlayerController(playerId, socket, canvasId, buttonIds) {
     socket,
     canvas,
     ctx,
-    readyBtn: document.getElementById(buttonIds.ready),
     clearBtn: document.getElementById(buttonIds.clear),
     undoBtn: document.getElementById(buttonIds.undo),
     sendBtn: document.getElementById(buttonIds.send),
@@ -35,17 +48,19 @@ function makePlayerController(playerId, socket, canvasId, buttonIds) {
 
 const players = {
   1: makePlayerController(1, socketP1, "canvas-1", {
-    ready: "ready-btn-1",
     clear: "clear-btn-1",
     undo: "undo-btn-1",
     send: "send-btn-1",
   }),
   2: makePlayerController(2, socketP2, "canvas-2", {
-    ready: "ready-btn-2",
     clear: "clear-btn-2",
     undo: "undo-btn-2",
     send: "send-btn-2",
   }),
+};
+
+const readyGateState = {
+  acknowledged: { 1: false, 2: false },
 };
 
 function refreshPlayerStatus(playerId) {
@@ -60,15 +75,6 @@ function refreshPlayerStatus(playerId) {
     return;
   }
   p.statusEl.textContent = p.ready ? "Connected - Ready" : "Connected - Not Ready";
-}
-
-function refreshReadyButton(playerId) {
-  const p = players[playerId];
-  if (!p || !p.readyBtn) return;
-  p.readyBtn.textContent = p.ready ? "Ready ✓" : "Ready";
-  p.readyBtn.classList.toggle("secondary", !p.ready);
-  const blockedByAiSelection = playerId === 1 && waitingForLevelSelection;
-  p.readyBtn.disabled = inGame || blockedByAiSelection;
 }
 
 function setPrediction(playerId, top) {
@@ -194,7 +200,6 @@ function setReadyState(playerId, ready) {
   const p = players[playerId];
   if (!p) return;
   p.ready = Boolean(ready);
-  refreshReadyButton(playerId);
   refreshPlayerStatus(playerId);
 }
 
@@ -265,59 +270,147 @@ function bindButtonEvents(playerId) {
   p.sendBtn.addEventListener("click", () => {
     sendDrawingUpdate(p, true);
   });
-
-  p.readyBtn.addEventListener("click", () => {
-    const next = !p.ready;
-    setReadyState(playerId, next);
-    p.socket.emit("player_ready", { playerId, ready: next });
-  });
 }
 
-function createAiLevelModal() {
-  let modal = document.getElementById("ai-level-modal");
+function createReadyGateModal() {
+  let modal = document.getElementById("ready-gate-modal");
   if (modal) return modal;
 
   modal = document.createElement("div");
-  modal.id = "ai-level-modal";
-  modal.style.position = "fixed";
-  modal.style.top = "0";
-  modal.style.left = "0";
-  modal.style.width = "100vw";
-  modal.style.height = "100vh";
-  modal.style.background = "rgba(0,0,0,0.4)";
-  modal.style.display = "none";
-  modal.style.justifyContent = "center";
-  modal.style.alignItems = "center";
-  modal.style.zIndex = "1000";
+  modal.id = "ready-gate-modal";
+  modal.className = "overlay-modal";
   modal.innerHTML = `
-    <div style="background: #fff; padding: 32px 24px; border-radius: 12px; min-width: 260px; box-shadow: 0 2px 16px #0002; text-align: center;">
-      <div style="font-size: 1.2em; margin-bottom: 18px;">Choose the AI level</div>
-      <div id="ai-level-modal-buttons" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;"></div>
+    <div class="overlay-card">
+      <h2>Players Ready?</h2>
+      <p class="overlay-text">Both players must tap Ready to start the round. Selected AI level: <strong>${selectedAiLevel}</strong>.</p>
+      <div class="ready-grid">
+        <button id="popup-ready-btn-1" class="overlay-btn secondary" type="button">Player 1 Ready</button>
+        <button id="popup-ready-btn-2" class="overlay-btn secondary" type="button">Player 2 Ready</button>
+      </div>
+      <p class="overlay-text" id="ready-popup-hint">Waiting for both players...</p>
     </div>
   `;
   document.body.appendChild(modal);
+
+  document.getElementById("popup-ready-btn-1").addEventListener("click", () => {
+    toggleReadyGate(1);
+  });
+  document.getElementById("popup-ready-btn-2").addEventListener("click", () => {
+    toggleReadyGate(2);
+  });
+
   return modal;
 }
 
-function showAiLevelButtons(levels, onSelect) {
-  const modal = createAiLevelModal();
-  const btnContainer = modal.querySelector("#ai-level-modal-buttons");
-  btnContainer.innerHTML = "";
-  levels.forEach((level) => {
-    const btn = document.createElement("button");
-    btn.textContent = level;
-    btn.className = "ai-level-btn";
-    btn.style.margin = "0 8px";
-    btn.style.padding = "8px 20px";
-    btn.style.fontSize = "1.1em";
-    btn.style.cursor = "pointer";
-    btn.onclick = () => {
-      modal.style.display = "none";
-      onSelect(level);
-    };
-    btnContainer.appendChild(btn);
+function createEndRoundModal() {
+  let modal = document.getElementById("end-round-modal");
+  if (modal) return modal;
+
+  modal = document.createElement("div");
+  modal.id = "end-round-modal";
+  modal.className = "overlay-modal";
+  modal.innerHTML = `
+    <div class="overlay-card">
+      <h2>Round Finished</h2>
+      <p class="overlay-text">What do you want to do next?</p>
+      <div class="ready-grid">
+        <button id="play-again-btn" class="overlay-btn" type="button">Play again</button>
+        <button id="home-page-btn" class="overlay-btn secondary" type="button">Home page</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById("play-again-btn").addEventListener("click", () => {
+    hideEndRoundModal();
+    openReadyGate(true);
   });
-  modal.style.display = "flex";
+
+  document.getElementById("home-page-btn").addEventListener("click", () => {
+    window.location.href = "/";
+  });
+
+  return modal;
+}
+
+function hideEndRoundModal() {
+  const modal = createEndRoundModal();
+  modal.classList.remove("open");
+}
+
+function showEndRoundModal() {
+  const modal = createEndRoundModal();
+  modal.classList.add("open");
+}
+
+function refreshReadyGateButtons() {
+  const btn1 = document.getElementById("popup-ready-btn-1");
+  const btn2 = document.getElementById("popup-ready-btn-2");
+  const hint = document.getElementById("ready-popup-hint");
+  if (!btn1 || !btn2 || !hint) return;
+
+  const p1Connected = players[1].connected;
+  const p2Connected = players[2].connected;
+
+  btn1.disabled = !p1Connected;
+  btn2.disabled = !p2Connected;
+
+  btn1.classList.toggle("active", readyGateState.acknowledged[1]);
+  btn2.classList.toggle("active", readyGateState.acknowledged[2]);
+
+  btn1.textContent = readyGateState.acknowledged[1] ? "Player 1 Ready ✓" : "Player 1 Ready";
+  btn2.textContent = readyGateState.acknowledged[2] ? "Player 2 Ready ✓" : "Player 2 Ready";
+
+  if (!p1Connected || !p2Connected) {
+    hint.textContent = "Waiting for both player connections...";
+    return;
+  }
+  if (readyGateState.acknowledged[1] && readyGateState.acknowledged[2]) {
+    hint.textContent = "Starting round...";
+    return;
+  }
+  hint.textContent = "Waiting for both players...";
+}
+
+function closeReadyGate() {
+  const modal = createReadyGateModal();
+  modal.classList.remove("open");
+}
+
+function openReadyGate(resetServerReady) {
+  readyGateState.acknowledged[1] = false;
+  readyGateState.acknowledged[2] = false;
+
+  if (resetServerReady) {
+    socketP1.emit("player_ready", { playerId: 1, ready: false });
+    socketP2.emit("player_ready", { playerId: 2, ready: false });
+    setReadyState(1, false);
+    setReadyState(2, false);
+  }
+
+  const modal = createReadyGateModal();
+  modal.classList.add("open");
+  refreshReadyGateButtons();
+}
+
+function toggleReadyGate(playerId) {
+  if (!players[playerId].connected || inGame) {
+    return;
+  }
+  readyGateState.acknowledged[playerId] = !readyGateState.acknowledged[playerId];
+  refreshReadyGateButtons();
+
+  if (readyGateState.acknowledged[1] && readyGateState.acknowledged[2]) {
+    socketP1.emit("player_ready", { playerId: 1, ready: true });
+    socketP2.emit("player_ready", { playerId: 2, ready: true });
+    setReadyState(1, true);
+    setReadyState(2, true);
+    closeReadyGate();
+  }
+}
+
+function handleRoundFinished() {
+  showEndRoundModal();
 }
 
 socketP1.on("connect", () => {
@@ -331,15 +424,15 @@ socketP2.on("connect", () => {
 socketP1.on("disconnect", () => {
   players[1].connected = false;
   players[1].ready = false;
-  refreshReadyButton(1);
   refreshPlayerStatus(1);
+  refreshReadyGateButtons();
 });
 
 socketP2.on("disconnect", () => {
   players[2].connected = false;
   players[2].ready = false;
-  refreshReadyButton(2);
   refreshPlayerStatus(2);
+  refreshReadyGateButtons();
 });
 
 // Shared game updates are handled from player 1 socket to avoid duplicate processing.
@@ -349,9 +442,9 @@ socketP1.on("player_presence", (payload) => {
   p.connected = Boolean(payload.connected);
   if (!p.connected) {
     p.ready = false;
-    refreshReadyButton(payload.playerId);
   }
   refreshPlayerStatus(payload.playerId);
+  refreshReadyGateButtons();
 });
 
 socketP1.on("player_ready_update", (payload) => {
@@ -373,6 +466,16 @@ socketP1.on("prediction_update", (payload) => {
 });
 
 socketP1.on("round_state", (payload) => {
+  const activeLevel = payload.aiLevel || selectedAiLevel;
+  if (aiLevelInfoEl) {
+    aiLevelInfoEl.textContent = `AI Level: ${activeLevel}`;
+  }
+  if (readyHintEl) {
+    readyHintEl.textContent = payload.roundDurationSeconds
+      ? `Round time: ${payload.roundDurationSeconds}s. ${DEFAULT_READY_HINT}`
+      : DEFAULT_READY_HINT;
+  }
+
   const levelText = payload.aiLevel ? ` | AI: ${payload.aiLevel}` : "";
   categoryEl.textContent = `Category: ${payload.category || "waiting..."}${levelText}`;
   if (payload.remainingSeconds != null) {
@@ -381,28 +484,45 @@ socketP1.on("round_state", (payload) => {
     timerEl.textContent = "Waiting";
   }
 
-  roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
-  inGame = payload.remainingSeconds != null && payload.remainingSeconds > 0;
-  if (inGame) {
-    waitingForLevelSelection = false;
+  const nextInGame = payload.remainingSeconds != null && payload.remainingSeconds > 0;
+  if (inGame && !nextInGame) {
+    handleRoundFinished();
   }
-  refreshReadyButton(1);
-  refreshReadyButton(2);
+
+  roundEndMs = payload.roundEnd ? payload.roundEnd * 1000 : null;
+  inGame = nextInGame;
+  if (inGame) {
+    readyGateState.acknowledged[1] = false;
+    readyGateState.acknowledged[2] = false;
+    closeReadyGate();
+    hideEndRoundModal();
+  }
   refreshPlayerStatus(1);
   refreshPlayerStatus(2);
+  refreshReadyGateButtons();
 });
 
-socketP1.on("ai_level_required", (payload) => {
-  waitingForLevelSelection = true;
-  refreshReadyButton(1);
-  const allowedLevels = Array.isArray(payload?.levels) && payload.levels.length
-    ? payload.levels
-    : ["Bad", "Good", "Expert"];
-  showAiLevelButtons(allowedLevels, (selectedLevel) => {
-    socketP1.emit("select_ai_level", { level: selectedLevel });
-    waitingForLevelSelection = false;
-    refreshReadyButton(1);
-  });
+socketP1.on("ai_level_required", (payload = {}) => {
+  const serverLevels = Array.isArray(payload.levels) ? payload.levels : [];
+  const defaultLevel = typeof payload.defaultLevel === "string" ? payload.defaultLevel : "Good";
+  const chosenLevel = serverLevels.includes(selectedAiLevel) ? selectedAiLevel : defaultLevel;
+
+  if (chosenLevel !== selectedAiLevel) {
+    selectedAiLevel = chosenLevel;
+    localStorage.setItem("selectedAiLevel", selectedAiLevel);
+  }
+  if (aiLevelInfoEl) {
+    aiLevelInfoEl.textContent = `AI Level: ${selectedAiLevel}`;
+  }
+  const readyGateModal = document.getElementById("ready-gate-modal");
+  if (readyGateModal) {
+    const levelStrong = readyGateModal.querySelector("strong");
+    if (levelStrong) {
+      levelStrong.textContent = selectedAiLevel;
+    }
+  }
+
+  socketP1.emit("select_ai_level", { level: selectedAiLevel });
 });
 
 setInterval(() => {
@@ -411,13 +531,12 @@ setInterval(() => {
   }
   const left = Math.max(0, Math.ceil((roundEndMs - Date.now()) / 1000));
   timerEl.textContent = `${left}s`;
-  if (left === 0) {
+  if (left === 0 && inGame) {
     inGame = false;
     roundEndMs = null;
-    refreshReadyButton(1);
-    refreshReadyButton(2);
     refreshPlayerStatus(1);
     refreshPlayerStatus(2);
+    handleRoundFinished();
   }
 }, 250);
 
@@ -433,7 +552,11 @@ window.addEventListener("resize", () => {
 
 fitCanvasToDisplay(players[1]);
 fitCanvasToDisplay(players[2]);
-refreshReadyButton(1);
-refreshReadyButton(2);
 refreshPlayerStatus(1);
 refreshPlayerStatus(2);
+
+setTimeout(() => {
+  if (!inGame) {
+    openReadyGate(false);
+  }
+}, 150);

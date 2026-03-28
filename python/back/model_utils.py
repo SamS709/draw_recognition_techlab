@@ -6,8 +6,8 @@ DEVICE = "cpu"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 MODELS_DIR = os.path.join(BASE_DIR, "../ml/models") #../ml/models
-ROUND_DURATION_SECONDS = 60
 AI_LEVELS = ("Bad", "Good", "Expert")
+
 
 MODEL_CACHE = {}
 

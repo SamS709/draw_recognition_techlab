@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draw Duel Home</title>
+  <link rel="stylesheet" href="/styles/colors.css" />
+  <link rel="stylesheet" href="/styles/home.css" />
+</head>
+<body>
+  <main class="home-wrap">
+    <section class="hero">
+      <h1>Draw Recognition Duel</h1>
+      <p class="subtitle">Choose an AI level, then launch one game screen with two player canvases.</p>
+    </section>
+
+    <section class="panel levels" aria-label="AI level selector">
+      <h2>AI Level</h2>
+      <div class="level-grid" id="level-grid">
+        <button class="level-card" data-level="Bad" type="button">
+          <strong>Bad</strong>
+          <span>Beginner model</span>
+        </button>
+        <button class="level-card" data-level="Good" type="button">
+          <strong>Good</strong>
+          <span>Balanced model</span>
+        </button>
+        <button class="level-card" data-level="Expert" type="button">
+          <strong>Expert</strong>
+          <span>Highly trained model</span>
+        </button>
+      </div>
+      <p class="explain" id="level-explain"></p>
+      <button id="start-game-btn" class="start-btn" type="button">Start Game</button>
+    </section>
+
+    <section class="panel">
+      <h2>How levels behave</h2>
+      <ul>
+        <li><strong>Higher level</strong>: trained longer on more data, recognizes drawings faster and more accurately.</li>
+        <li><strong>Lower level</strong>: trained less, needs clearer drawings and guesses less reliably.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script src="/js/home.js"></script>
+</body>
+</html>
