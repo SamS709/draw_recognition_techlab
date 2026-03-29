@@ -1,17 +1,20 @@
 :root {
   /* Core palette in RGB for easy tweaking */
-  --blue-rgb: 24, 96, 210;
-  --yellow-rgb: 250, 205, 64;
+  --blue-rgb: 18, 64, 168;
+  --yellow-rgb: 245, 210, 62;
   --white-rgb: 255, 255, 255;
 
   /* Shared semantic tokens */
-  --bg: rgb(var(--white-rgb));
-  --panel: rgb(var(--white-rgb));
-  --text: rgb(20, 35, 64);
-  --muted: rgba(20, 35, 64, 0.72);
+  --bg: rgb(var(--yellow-rgb));
+  --panel: rgb(255, 248, 212);
+  --text: rgb(12, 39, 112);
+  --muted: rgba(12, 39, 112, 0.82);
   --accent: rgb(var(--blue-rgb));
-  --accent-2: rgb(var(--yellow-rgb));
-  --accent-soft: rgb(var(--yellow-rgb));
-  --border: rgba(var(--blue-rgb), 0.34);
+  --accent-2: rgb(255, 235, 120);
+  --accent-soft: rgb(255, 241, 174);
+  --border: rgb(var(--blue-rgb));
   --danger: rgb(var(--blue-rgb));
+
+  --pixel-shadow: 0 4px 0 rgb(var(--blue-rgb));
+  --pixel-shadow-lg: 0 6px 0 rgb(var(--blue-rgb));
 }

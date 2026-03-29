@@ -1,0 +1,153 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap");
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "VT323", "Courier New", monospace;
+  color: var(--text);
+  background:
+    linear-gradient(0deg, rgba(var(--blue-rgb), 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--blue-rgb), 0.14) 1px, transparent 1px),
+    var(--bg);
+  background-size: 16px 16px, 16px 16px, auto;
+  padding: 18px;
+}
+
+.home-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.hero,
+.panel,
+.level-card,
+.explain,
+.start-btn {
+  border: 4px solid var(--border);
+  border-radius: 0;
+  box-shadow: var(--pixel-shadow);
+}
+
+.hero {
+  background: var(--panel);
+  padding: 16px;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: "Press Start 2P", "VT323", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  line-height: 1.35;
+}
+
+.hero h1 {
+  font-size: clamp(18px, 3vw, 36px);
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: clamp(26px, 2.6vw, 34px);
+}
+
+.panel {
+  background: var(--panel);
+  padding: 16px;
+}
+
+.levels {
+  display: grid;
+  gap: 12px;
+}
+
+.level-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.level-card {
+  background: rgb(var(--white-rgb));
+  color: var(--text);
+  padding: 13px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  transition: transform 90ms steps(2, end);
+}
+
+.level-card:hover {
+  transform: translate(-1px, -1px);
+}
+
+.level-card strong {
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.level-card span {
+  font-size: 28px;
+  line-height: 1.06;
+}
+
+.level-card.active {
+  background: var(--accent);
+  color: rgb(var(--white-rgb));
+}
+
+.explain {
+  margin: 0;
+  padding: 10px 12px;
+  background: rgb(var(--white-rgb));
+  color: var(--text);
+  font-size: 29px;
+  line-height: 1.04;
+}
+
+.start-btn {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: rgb(var(--white-rgb));
+  font: inherit;
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 12px 16px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.start-btn:hover {
+  transform: translate(-1px, -1px);
+}
+
+ul {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 29px;
+  line-height: 1.04;
+}
+
+@media (max-width: 880px) {
+  body {
+    padding: 12px;
+  }
+
+  .level-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .start-btn {
+    width: 100%;
+  }
+}
