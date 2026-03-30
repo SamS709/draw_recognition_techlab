@@ -130,6 +130,14 @@ To create workshop levels based on epochs, keep checkpoints from different train
 
 ## Run the Workshop App
 
+In a python environment:
+
+```bash
+cd draw_recogintion_techlab
+pip install -r requirements.txt
+```
+
+
 From the project root:
 
 ```bash

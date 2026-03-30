@@ -1,0 +1,7 @@
+flask
+flask-socketio
+torch
+torchvision
+numpy
+matplotlib
+torchmetrics
