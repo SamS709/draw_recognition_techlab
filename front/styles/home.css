@@ -24,7 +24,6 @@ body {
 
 .hero,
 .panel,
-.level-card,
 .explain,
 .start-btn {
   border: 4px solid var(--border);
@@ -67,41 +66,27 @@ h2 {
   gap: 12px;
 }
 
-.level-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.epoch-row {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--text);
+  font-size: 34px;
+  line-height: 1.1;
 }
 
-.level-card {
+.epoch-select {
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 4px solid var(--accent);
+  border-radius: 0;
   background: rgb(var(--white-rgb));
   color: var(--text);
-  padding: 13px;
-  text-align: left;
-  cursor: pointer;
-  display: grid;
-  gap: 4px;
-  transition: transform 90ms steps(2, end);
-}
-
-.level-card:hover {
-  transform: translate(-1px, -1px);
-}
-
-.level-card strong {
   font-family: "Press Start 2P", "VT323", monospace;
-  font-size: 15px;
-  text-transform: uppercase;
-}
-
-.level-card span {
-  font-size: 28px;
-  line-height: 1.06;
-}
-
-.level-card.active {
-  background: var(--accent);
-  color: rgb(var(--white-rgb));
+  font-size: 18px;
+  cursor: pointer;
 }
 
 .explain {
@@ -131,6 +116,12 @@ h2 {
   transform: translate(-1px, -1px);
 }
 
+.start-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 ul {
   margin: 10px 0 0;
   color: var(--muted);
@@ -143,8 +134,12 @@ ul {
     padding: 12px;
   }
 
-  .level-grid {
-    grid-template-columns: 1fr;
+  .epoch-row {
+    font-size: 30px;
+  }
+
+  .epoch-select {
+    width: 100%;
   }
 
   .start-btn {

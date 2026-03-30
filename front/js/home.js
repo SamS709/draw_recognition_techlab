@@ -1,62 +1,53 @@
-const EXPLANATIONS = {
-  Bad: "Bad: this AI was trained less and on less varied data. It often hesitates, and needs very clear shapes.",
-  Good: "Good: this AI is balanced. It recognizes common drawings fairly quickly while still making occasional mistakes.",
-  Expert: "Expert: this AI was trained a lot on a lot of data. It usually guesses faster and more accurately.",
-};
+const stored = localStorage.getItem("selectedEpochs");
+let selectedEpochs = stored || "";
 
-const FALLBACK_LEVELS = ["Bad", "Good", "Expert"];
-const FALLBACK_DEFAULT_LEVEL = "Good";
+let availableEpochs = [];
+let roundSeconds = null;
 
-let allowedLevels = [...FALLBACK_LEVELS];
-let defaultLevel = FALLBACK_DEFAULT_LEVEL;
-let timerByLevel = {};
-
-const stored = localStorage.getItem("selectedAiLevel");
-let selectedLevel = stored || defaultLevel;
-
-const cards = Array.from(document.querySelectorAll(".level-card"));
+const epochsSelect = document.getElementById("epochs-select");
 const explainEl = document.getElementById("level-explain");
 const startBtn = document.getElementById("start-game-btn");
 
-cards.forEach((card) => {
-  const subtitleEl = card.querySelector("span");
-  if (subtitleEl) {
-    subtitleEl.dataset.baseText = subtitleEl.textContent;
-  }
-});
-
-function levelIsAllowed(level) {
-  return allowedLevels.includes(level);
+function isValidEpochChoice(value) {
+  const n = Number.parseInt(value, 10);
+  return Number.isInteger(n) && availableEpochs.includes(n);
 }
 
-function getRoundSeconds(level) {
-  const value = Number(timerByLevel[level]);
-  if (!Number.isFinite(value) || value <= 0) {
-    return null;
-  }
-  return Math.round(value);
-}
+function rebuildEpochOptions() {
+  epochsSelect.innerHTML = "";
 
-function refreshCardSubtitles() {
-  cards.forEach((card) => {
-    const level = card.dataset.level;
-    const subtitleEl = card.querySelector("span");
-    if (!subtitleEl) return;
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = "";
+  placeholderOption.selected = true;
+  epochsSelect.appendChild(placeholderOption);
 
-    const baseText = subtitleEl.dataset.baseText || subtitleEl.textContent || "";
-    const roundSeconds = getRoundSeconds(level);
-    subtitleEl.textContent = roundSeconds ? `${baseText} | ${roundSeconds}s round` : baseText;
+  availableEpochs.forEach((epochs) => {
+    const option = document.createElement("option");
+    option.value = String(epochs);
+    option.textContent = String(epochs);
+    epochsSelect.appendChild(option);
   });
 }
 
 function renderSelection() {
-  cards.forEach((card) => {
-    card.classList.toggle("active", card.dataset.level === selectedLevel);
-  });
+  const hasChoice = isValidEpochChoice(selectedEpochs);
+  startBtn.disabled = !hasChoice;
 
-  const roundSeconds = getRoundSeconds(selectedLevel);
-  const timingText = roundSeconds ? ` Round timer for this level: ${roundSeconds}s.` : "";
-  explainEl.textContent = `${EXPLANATIONS[selectedLevel] || EXPLANATIONS[defaultLevel] || ""}${timingText}`;
+  if (!availableEpochs.length) {
+    explainEl.textContent = "No epoch-trained model pairs were found. Add GRU_[n]_jit.pt and CNN_[n]_jit.pt files in python/ml/models.";
+    return;
+  }
+
+  if (!hasChoice) {
+    explainEl.textContent = "Scroll and choose a number of epochs to start the game.";
+    return;
+  }
+
+  const timingText = Number.isFinite(roundSeconds) && roundSeconds > 0
+    ? ` Round timer: ${Math.round(roundSeconds)}s.`
+    : "";
+  explainEl.textContent = `Selected model: ${selectedEpochs} training epochs.${timingText}`;
 }
 
 async function loadGameConfig() {
@@ -66,51 +57,43 @@ async function loadGameConfig() {
       throw new Error(`HTTP ${response.status}`);
     }
     const config = await response.json();
-
-    if (Array.isArray(config.levels) && config.levels.length > 0) {
-      const availableLevels = config.levels.filter((level) => cards.some((card) => card.dataset.level === level));
-      if (availableLevels.length > 0) {
-        allowedLevels = availableLevels;
-      }
+    if (Array.isArray(config.availableEpochs)) {
+      availableEpochs = config.availableEpochs
+        .map((v) => Number.parseInt(v, 10))
+        .filter((v) => Number.isInteger(v))
+        .sort((a, b) => a - b);
     }
-
-    if (config.timerByLevel && typeof config.timerByLevel === "object") {
-      timerByLevel = config.timerByLevel;
-    }
-
-    if (typeof config.defaultLevel === "string" && levelIsAllowed(config.defaultLevel)) {
-      defaultLevel = config.defaultLevel;
-    }
+    roundSeconds = Number(config.roundSeconds);
   } catch (error) {
-    console.warn("Could not load /game-config, using fallback level config.", error);
+    console.warn("Could not load /game-config.", error);
   }
 
-  if (!levelIsAllowed(selectedLevel)) {
-    selectedLevel = defaultLevel;
+  rebuildEpochOptions();
+
+  if (!isValidEpochChoice(selectedEpochs)) {
+    selectedEpochs = "";
   }
-  localStorage.setItem("selectedAiLevel", selectedLevel);
-  refreshCardSubtitles();
+  epochsSelect.value = selectedEpochs;
   renderSelection();
 }
 
-cards.forEach((card) => {
-  card.addEventListener("click", () => {
-    const next = card.dataset.level;
-    if (!levelIsAllowed(next)) {
-      return;
-    }
-    selectedLevel = next;
-    localStorage.setItem("selectedAiLevel", selectedLevel);
-    renderSelection();
-  });
+epochsSelect.addEventListener("change", () => {
+  selectedEpochs = epochsSelect.value;
+  if (isValidEpochChoice(selectedEpochs)) {
+    localStorage.setItem("selectedEpochs", selectedEpochs);
+  } else {
+    localStorage.removeItem("selectedEpochs");
+  }
+  renderSelection();
 });
 
 startBtn.addEventListener("click", () => {
-  if (!levelIsAllowed(selectedLevel)) {
-    selectedLevel = defaultLevel;
+  if (!isValidEpochChoice(selectedEpochs)) {
+    renderSelection();
+    return;
   }
-  localStorage.setItem("selectedAiLevel", selectedLevel);
-  window.location.href = `/host?level=${encodeURIComponent(selectedLevel)}`;
+  localStorage.setItem("selectedEpochs", selectedEpochs);
+  window.location.href = `/host?n_epochs=${encodeURIComponent(selectedEpochs)}`;
 });
 
 loadGameConfig();

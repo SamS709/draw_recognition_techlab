@@ -3,34 +3,20 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 from back.game_state import (
     game_state, SID_TO_PLAYER, PLAYER_TO_SID,
-    round_active, request_ai_level_from_player_one,
+    round_active, request_epochs_from_player_one,
     emit_ready_state, start_round, round_payload, predict_from_points
 )
-from back.model_utils import AI_LEVELS
+from back.model_utils import get_available_epochs, normalize_epochs
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 FRONT_DIR = os.path.join(PROJECT_ROOT, "front")
 
-DEFAULT_AI_LEVEL = "Good"
-AI_LEVEL_ROUND_SECONDS = {
-    "Bad": 18,
-    "Good": 12,
-    "Expert": 8,
-}
+ROUND_SECONDS = 12
 
 
-def normalize_ai_level(value):
-    requested_level = str(value or DEFAULT_AI_LEVEL)
-    return next(
-        (level for level in AI_LEVELS if level.lower() == requested_level.lower()),
-        DEFAULT_AI_LEVEL,
-    )
-
-
-def round_duration_for_level(level):
-    fallback = AI_LEVEL_ROUND_SECONDS[DEFAULT_AI_LEVEL]
-    return int(AI_LEVEL_ROUND_SECONDS.get(level, fallback))
+def round_duration_seconds():
+    return int(ROUND_SECONDS)
 
 
 app = Flask(__name__)
@@ -59,15 +45,9 @@ def js_file(filename):
 
 @app.route('/game-config')
 def game_config():
-    timer_by_level = {
-        level: round_duration_for_level(level)
-        for level in AI_LEVELS
-    }
-    default_level = normalize_ai_level(DEFAULT_AI_LEVEL)
     return jsonify({
-        "levels": list(AI_LEVELS),
-        "defaultLevel": default_level,
-        "timerByLevel": timer_by_level,
+        "availableEpochs": get_available_epochs(),
+        "roundSeconds": round_duration_seconds(),
     })
 
 
@@ -106,7 +86,7 @@ def on_disconnect():
             PLAYER_TO_SID[player_id] = None
         game_state["players"][player_id]["connected"] = False
         game_state["players"][player_id]["ready"] = False
-        game_state["awaiting_ai_level"] = False
+        game_state["awaiting_epochs"] = False
         emit('player_presence', {"playerId": player_id, "connected": False}, broadcast=True)
         emit_ready_state(player_id, broadcast=True)
 
@@ -157,16 +137,16 @@ def on_player_ready(payload):
 
     game_state["players"][player_id]["ready"] = ready
     if not ready:
-        game_state["awaiting_ai_level"] = False
+        game_state["awaiting_epochs"] = False
     emit_ready_state(player_id, broadcast=True)
 
     if game_state["players"][1]["ready"] and game_state["players"][2]["ready"]:
-        if not game_state["awaiting_ai_level"]:
-            request_ai_level_from_player_one()
+        if not game_state["awaiting_epochs"]:
+            request_epochs_from_player_one()
 
 
-@socketio.on('select_ai_level')
-def on_select_ai_level(payload):
+@socketio.on('select_n_epochs')
+def on_select_n_epochs(payload):
     player_id = SID_TO_PLAYER.get(request.sid)
     if player_id != 1:
         return
@@ -175,8 +155,17 @@ def on_select_ai_level(payload):
     if not (game_state["players"][1]["ready"] and game_state["players"][2]["ready"]):
         return
 
-    normalized_level = normalize_ai_level(payload.get("level", DEFAULT_AI_LEVEL))
-    start_round(round_duration_for_level(normalized_level), ai_level=normalized_level)
+    selected_epochs = normalize_epochs(payload.get("n_epochs"))
+    available_epochs = set(get_available_epochs())
+    if selected_epochs is None or selected_epochs not in available_epochs:
+        emit('model_selection_error', {
+            "message": "Selected epoch model is unavailable.",
+            "availableEpochs": sorted(available_epochs),
+        }, to=request.sid)
+        game_state["awaiting_epochs"] = False
+        return
+
+    start_round(round_duration_seconds(), n_epochs=selected_epochs)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

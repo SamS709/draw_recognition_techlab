@@ -1,21 +1,25 @@
 const VIRTUAL_CANVAS_SIZE = 900;
 const DEFAULT_READY_HINT = "Round starts after both players confirm Ready in the popup";
 
-const urlLevel = new URLSearchParams(window.location.search).get("level");
-const storedLevel = localStorage.getItem("selectedAiLevel");
-let selectedAiLevel = urlLevel || storedLevel || "Good";
-localStorage.setItem("selectedAiLevel", selectedAiLevel);
+const urlEpochs = new URLSearchParams(window.location.search).get("n_epochs");
+const storedEpochs = localStorage.getItem("selectedEpochs");
+let selectedEpochs = urlEpochs || storedEpochs || "";
+if (selectedEpochs) {
+  localStorage.setItem("selectedEpochs", selectedEpochs);
+}
 
 const socketP1 = io({ transports: ["websocket", "polling"] });
 const socketP2 = io({ transports: ["websocket", "polling"] });
 
 const timerEl = document.getElementById("timer");
 const categoryEl = document.getElementById("category");
-const aiLevelInfoEl = document.getElementById("ai-level-info");
+const epochsInfoEl = document.getElementById("epochs-info");
 const readyHintEl = document.getElementById("ready-hint");
 
-if (aiLevelInfoEl) {
-  aiLevelInfoEl.textContent = `AI Level: ${selectedAiLevel}`;
+if (epochsInfoEl) {
+  epochsInfoEl.textContent = selectedEpochs
+    ? `Model epochs: ${selectedEpochs}`
+    : "Model epochs: not selected";
 }
 if (readyHintEl) {
   readyHintEl.textContent = DEFAULT_READY_HINT;
@@ -282,7 +286,7 @@ function createReadyGateModal() {
   modal.innerHTML = `
     <div class="overlay-card">
       <h2>Players Ready?</h2>
-      <p class="overlay-text">Both players must tap Ready to start the round. Selected AI level: <strong>${selectedAiLevel}</strong>.</p>
+      <p class="overlay-text">Both players must tap Ready to start the round. Selected epochs: <strong>${selectedEpochs || "none"}</strong>.</p>
       <div class="ready-grid">
         <button id="popup-ready-btn-1" class="overlay-btn secondary" type="button">Player 1 Ready</button>
         <button id="popup-ready-btn-2" class="overlay-btn secondary" type="button">Player 2 Ready</button>
@@ -466,9 +470,11 @@ socketP1.on("prediction_update", (payload) => {
 });
 
 socketP1.on("round_state", (payload) => {
-  const activeLevel = payload.aiLevel || selectedAiLevel;
-  if (aiLevelInfoEl) {
-    aiLevelInfoEl.textContent = `AI Level: ${activeLevel}`;
+  const activeEpochs = payload.nEpochs ?? selectedEpochs;
+  if (epochsInfoEl) {
+    epochsInfoEl.textContent = activeEpochs
+      ? `Model epochs: ${activeEpochs}`
+      : "Model epochs: not selected";
   }
   if (readyHintEl) {
     readyHintEl.textContent = payload.roundDurationSeconds
@@ -476,8 +482,8 @@ socketP1.on("round_state", (payload) => {
       : DEFAULT_READY_HINT;
   }
 
-  const levelText = payload.aiLevel ? ` | AI: ${payload.aiLevel}` : "";
-  categoryEl.textContent = `Category: ${payload.category || "waiting..."}${levelText}`;
+  const epochText = payload.nEpochs ? ` | Epochs: ${payload.nEpochs}` : "";
+  categoryEl.textContent = `Category: ${payload.category || "waiting..."}${epochText}`;
   if (payload.remainingSeconds != null) {
     timerEl.textContent = `${payload.remainingSeconds}s`;
   } else {
@@ -502,27 +508,49 @@ socketP1.on("round_state", (payload) => {
   refreshReadyGateButtons();
 });
 
-socketP1.on("ai_level_required", (payload = {}) => {
-  const serverLevels = Array.isArray(payload.levels) ? payload.levels : [];
-  const defaultLevel = typeof payload.defaultLevel === "string" ? payload.defaultLevel : "Good";
-  const chosenLevel = serverLevels.includes(selectedAiLevel) ? selectedAiLevel : defaultLevel;
+socketP1.on("epoch_selection_required", (payload = {}) => {
+  const availableEpochs = Array.isArray(payload.availableEpochs)
+    ? payload.availableEpochs
+      .map((v) => Number.parseInt(v, 10))
+      .filter((v) => Number.isInteger(v))
+    : [];
 
-  if (chosenLevel !== selectedAiLevel) {
-    selectedAiLevel = chosenLevel;
-    localStorage.setItem("selectedAiLevel", selectedAiLevel);
+  const currentEpoch = Number.parseInt(selectedEpochs, 10);
+  const hasValidCurrent = Number.isInteger(currentEpoch) && availableEpochs.includes(currentEpoch);
+  if (!hasValidCurrent) {
+    if (readyHintEl) {
+      readyHintEl.textContent = "No valid epoch selected. Return to home and choose epochs first.";
+    }
+    socketP1.emit("player_ready", { playerId: 1, ready: false });
+    socketP2.emit("player_ready", { playerId: 2, ready: false });
+    setReadyState(1, false);
+    setReadyState(2, false);
+    openReadyGate(false);
+    return;
   }
-  if (aiLevelInfoEl) {
-    aiLevelInfoEl.textContent = `AI Level: ${selectedAiLevel}`;
+
+  selectedEpochs = String(currentEpoch);
+  localStorage.setItem("selectedEpochs", selectedEpochs);
+  if (epochsInfoEl) {
+    epochsInfoEl.textContent = `Model epochs: ${selectedEpochs}`;
   }
   const readyGateModal = document.getElementById("ready-gate-modal");
   if (readyGateModal) {
     const levelStrong = readyGateModal.querySelector("strong");
     if (levelStrong) {
-      levelStrong.textContent = selectedAiLevel;
+      levelStrong.textContent = selectedEpochs;
     }
   }
 
-  socketP1.emit("select_ai_level", { level: selectedAiLevel });
+  socketP1.emit("select_n_epochs", { n_epochs: currentEpoch });
+});
+
+socketP1.on("model_selection_error", (payload = {}) => {
+  const message = payload.message || "Selected epoch model is unavailable.";
+  if (readyHintEl) {
+    readyHintEl.textContent = message;
+  }
+  openReadyGate(false);
 });
 
 setInterval(() => {

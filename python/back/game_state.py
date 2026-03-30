@@ -2,10 +2,9 @@ import random
 import time
 from flask_socketio import emit
 from ml.utils import Data
-from .model_utils import get_models_for_level, AI_LEVELS
+from .model_utils import get_models_for_epochs, get_available_epochs, normalize_epochs
 
 data = Data()
-DEFAULT_AI_LEVEL = "Good"
 
 SID_TO_PLAYER = {}
 PLAYER_TO_SID = {1: None, 2: None}
@@ -14,8 +13,8 @@ game_state = {
     "category": None,
     "round_end": None,
     "round_duration_seconds": None,
-    "ai_level": None,
-    "awaiting_ai_level": False,
+    "n_epochs": None,
+    "awaiting_epochs": False,
     "players": {
         1: {"points": [], "connected": False, "ready": False},
         2: {"points": [], "connected": False, "ready": False},
@@ -30,23 +29,22 @@ def remaining_seconds():
         game_state["round_end"] = None
         game_state["round_duration_seconds"] = None
         game_state["category"] = None
-        game_state["ai_level"] = None
-        game_state["awaiting_ai_level"] = False
+        game_state["n_epochs"] = None
+        game_state["awaiting_epochs"] = False
         return None
     return left
 
 def round_active():
     return remaining_seconds() is not None
 
-def request_ai_level_from_player_one():
+def request_epochs_from_player_one():
     sid = PLAYER_TO_SID.get(1)
     if not sid:
         return
-    emit('ai_level_required', {
-        "levels": list(AI_LEVELS),
-        "defaultLevel": DEFAULT_AI_LEVEL,
+    emit('epoch_selection_required', {
+        "availableEpochs": get_available_epochs(),
     }, to=sid)
-    game_state["awaiting_ai_level"] = True
+    game_state["awaiting_epochs"] = True
 
 def emit_ready_state(player_id, broadcast=True):
     emit(
@@ -58,13 +56,17 @@ def emit_ready_state(player_id, broadcast=True):
         broadcast=broadcast,
     )
 
-def start_round(duration, ai_level="Good"):
+def start_round(duration, n_epochs):
+    normalized_epochs = normalize_epochs(n_epochs)
+    if normalized_epochs is None:
+        raise ValueError(f"Invalid epoch value: {n_epochs}")
+
     round_seconds = max(3, int(duration))
     game_state["category"] = random.choice(data.cats)
     game_state["round_end"] = time.time() + round_seconds
     game_state["round_duration_seconds"] = round_seconds
-    game_state["ai_level"] = ai_level if ai_level in AI_LEVELS else "Good"
-    game_state["awaiting_ai_level"] = False
+    game_state["n_epochs"] = normalized_epochs
+    game_state["awaiting_epochs"] = False
     for pid in (1, 2):
         game_state["players"][pid]["points"] = []
         game_state["players"][pid]["ready"] = False
@@ -82,14 +84,16 @@ def round_payload():
         "remainingSeconds": remaining_seconds(),
         "roundEnd": game_state["round_end"],
         "roundDurationSeconds": game_state["round_duration_seconds"],
-        "aiLevel": game_state["ai_level"],
+        "nEpochs": game_state["n_epochs"],
     }
 
 def predict_from_points(points):
     data.process_data({"points": points})
     tensor_gru, length_, tensor_cnn = data.get_data()
-    selected_level = game_state.get("ai_level") or "Good"
-    model_gru, model_cnn, _ = get_models_for_level(selected_level)
+    selected_epochs = game_state.get("n_epochs")
+    if selected_epochs is None:
+        raise RuntimeError("No model epochs selected for this round")
+    model_gru, model_cnn, _ = get_models_for_epochs(selected_epochs)
     top_cats, top_probs = data.pre_models(model_gru, tensor_gru, length_, model_cnn, tensor_cnn)
     return {
         "prediction": {"category": top_cats[0], "confidence": float(top_probs[0])},
