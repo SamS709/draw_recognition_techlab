@@ -11,15 +11,12 @@
   <main class="app">
     <section class="top">
       <h1 class="headline" id="category">Category: waiting...</h1>
-      <div class="timer" id="timer">10s</div>
-      <div class="controls">
-        <p class="status" id="ready-hint">Round starts after both players confirm Ready in the popup</p>
-        <p class="status" id="epochs-info">Model epochs: not selected</p>
-      </div>
+      <div class="timer" id="timer">Waiting...</div>
+      <h2 class="top-epochs" id="epochs-info">Model epochs: not selected</h2>
     </section>
 
     <section class="boards">
-      <article class="board">
+      <article class="board board-one">
         <header>
           <h2>Player 1</h2>
           <p class="status" id="p1-status">Disconnected - Not Ready</p>
@@ -32,10 +29,16 @@
           <button id="undo-btn-1" class="secondary" type="button">Undo Stroke</button>
           <button id="send-btn-1" type="button">Force Predict</button>
         </div>
-        <div class="pred"><ol id="pred-1"><li>Waiting for drawing</li></ol></div>
       </article>
 
-      <article class="board">
+      <aside class="pred-column" aria-label="Predictions">
+        <div class="pred-stack">
+          <div class="pred pred-side pred-side-1"><ol id="pred-1"><li>Waiting for drawing</li></ol></div>
+          <div class="pred pred-side pred-side-2"><ol id="pred-2"><li>Waiting for drawing</li></ol></div>
+        </div>
+      </aside>
+
+      <article class="board board-two">
         <header>
           <h2>Player 2</h2>
           <p class="status" id="p2-status">Disconnected - Not Ready</p>
@@ -48,7 +51,6 @@
           <button id="undo-btn-2" class="secondary" type="button">Undo Stroke</button>
           <button id="send-btn-2" type="button">Force Predict</button>
         </div>
-        <div class="pred"><ol id="pred-2"><li>Waiting for drawing</li></ol></div>
       </article>
     </section>
   </main>

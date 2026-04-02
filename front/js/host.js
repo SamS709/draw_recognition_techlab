@@ -483,7 +483,7 @@ socketP1.on("round_state", (payload) => {
   }
 
   const epochText = payload.nEpochs ? ` | Epochs: ${payload.nEpochs}` : "";
-  categoryEl.textContent = `Category: ${payload.category || "waiting..."}${epochText}`;
+  categoryEl.textContent = `Category: ${payload.category || "waiting..."}`;
   if (payload.remainingSeconds != null) {
     timerEl.textContent = `${payload.remainingSeconds}s`;
   } else {

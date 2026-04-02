@@ -51,7 +51,7 @@ body::before {
 
 .top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 14px;
   align-items: center;
   padding: 14px;
@@ -70,6 +70,7 @@ body::before {
 
 .headline {
   font-size: clamp(14px, 2vw, 26px);
+  justify-self: start;
 }
 
 .timer {
@@ -83,6 +84,14 @@ body::before {
   background: var(--accent);
   text-shadow: 0 0 8px rgba(var(--white-rgb), 0.5);
   animation: blinkTimer 1s steps(2, end) infinite;
+  justify-self: center;
+}
+
+.top-epochs {
+  margin: 0;
+  justify-self: end;
+  text-align: right;
+  font-size: clamp(16px, 2.1vw, 30px);
 }
 
 .controls {
@@ -133,14 +142,20 @@ button.active {
 
 .boards {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* column-gap: 18px; */
+  row-gap: 16px;
+  border-bottom: none;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 26%) minmax(0, 1fr);
 }
 
 .board {
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr auto;
+}
+
+.board-one, .board-two {
+  box-shadow: none;
 }
 
 .board header {
@@ -156,6 +171,31 @@ button.active {
 .canvas-wrap {
   padding: 12px;
   background: rgba(var(--white-rgb), 0.62);
+  min-width: 0;
+}
+
+.pred-side-1{
+  border: 4px solid var(--border);
+  border-left: none;
+  margin-right: 20px;
+}
+
+.pred-side-2{
+  border: 4px solid var(--border);
+  border-right: none;
+  margin-left: 20px;
+}
+
+.pred-column {
+  min-width: 0;
+  padding: 0px 0;
+}
+
+.pred-stack {
+  height: 100%;
+  display: grid;
+  gap: 18px;
+  grid-template-rows: 1fr 1fr;
 }
 
 canvas {
@@ -190,21 +230,14 @@ button:disabled {
 }
 
 .pred {
-  border-top: 4px solid var(--border);
-  padding: 10px 14px;
+  /* padding: 10px 14px; */
   color: var(--muted);
-  min-height: 104px;
+  min-height: 160px;
   background: rgb(var(--white-rgb));
   font-size: 30px;
   line-height: 1.05;
 }
 
-.pred ol {
-  margin: 0;
-  padding-left: 20px;
-  display: grid;
-  gap: 6px;
-}
 
 .status {
   color: var(--muted);
@@ -276,13 +309,33 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .headline,
+  .timer,
+  .top-epochs {
+    justify-self: start;
+    text-align: left;
+  }
+
   .timer {
     text-align: center;
-    justify-self: start;
   }
 
   .boards {
     grid-template-columns: 1fr;
+    row-gap: 12px;
+    column-gap: 0;
+  }
+
+  .pred-column {
+    padding: 0;
+    border-top: none;
+    border-bottom: none;
+    background: transparent;
+  }
+
+  .pred-stack {
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
   }
 
   .controls {
