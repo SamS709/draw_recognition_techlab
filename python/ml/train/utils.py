@@ -40,7 +40,7 @@ def evaluate_tm(model, data_loader, metric, device):
     return metric.compute()
 
 def save_checkpoint(epoch, model, model_type, optimizer, model_name):
-    save_path = os.path.join("ml", "train", model_type, "models", model_name + ".pt")
+    save_path = os.path.join("ml", "train", model_type, "models", model_name + "_" + epoch + "_" + ".pt")
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -63,6 +63,7 @@ def train_cnn(model, model_type, optimizer, loss_fn, metric, train_loader, valid
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="max", patience=patience, factor=factor)
     history = {"train_losses": [], "train_metrics": [], "valid_metrics": []}
+    save_rate = 1
     for epoch in range(epoch0, epoch0 + n_epochs):
         total_loss = 0.0
         metric.reset()
@@ -75,6 +76,7 @@ def train_cnn(model, model_type, optimizer, loss_fn, metric, train_loader, valid
             loss = loss_fn(y_pred, y_batch)
             total_loss += loss.item()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             optimizer.zero_grad()
             metric.update(y_pred, y_batch)
@@ -100,19 +102,20 @@ def train_cnn(model, model_type, optimizer, loss_fn, metric, train_loader, valid
               f"train loss: {history['train_losses'][-1]:.4f}, "
               f"train metric: {history['train_metrics'][-1]:.2%}, "
               f"valid metric: {history['valid_metrics'][-1]:.2%}")
-        if epoch > epoch0 + 1 and history['valid_metrics'][-1] >= history['valid_metrics'][-2]:
+        if (epoch - epoch0) % save_rate == 0:
             save_checkpoint(epoch, model, model_type, optimizer, model_name)
     writer.close()
     return history
 
 def train_gru(model, model_type, optimizer, loss_fn, metric, train_loader, valid_loader, model_name, epoch0,
-              n_epochs, device, patience=2, factor=0.5, epoch_callback=None, max_grad_norm=1.0, n_saves=10):
+              n_epochs, device, patience=2, factor=0.5, epoch_callback=None, max_grad_norm=1.0):
     writer = SummaryWriter(log_dir=os.path.join("ml", "train", model_type, "runs", model_name))
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="max", patience=patience, factor=factor)
     history = {"train_losses": [], "train_metrics": [], "valid_losses": [], "valid_metrics": []}
     glob_path = os.path.join("ml", "train", model_type, "models")
-    best_model_path = os.path.join(glob_path, "best_model.pt")
+    save_rate = 1
+    best_val_metric = 0.0
     if not os.path.exists(glob_path):
         os.makedirs(glob_path)
     for epoch in range(epoch0, epoch0 + n_epochs):
@@ -156,16 +159,17 @@ def train_gru(model, model_type, optimizer, loss_fn, metric, train_loader, valid
               f"valid metric: {val_metric:.2%}, "
               f"lr: {optimizer.param_groups[0]['lr']:.6f}")
         # Save best model
-        if len(history["valid_metrics"]) > 2:
-            if history["valid_metrics"][-1] > history["valid_metrics"][-2]:
-                torch.save(model.state_dict(), best_model_path)
+        if len(history["valid_metrics"]) > 0:
+            if history["valid_metrics"][-1] > best_val_metric:
+                best_val_metric = history["valid_metrics"][-1]
+                save_checkpoint(epoch, model, model_type, optimizer, "best_" + model_name)
         # Periodic save
-        if (epoch - epoch0) % max(1, n_saves) == 0:
-            torch.save(model.state_dict(), os.path.join(glob_path, f"{model_name}_{epoch}.pt"))
+        if (epoch - epoch0) % save_rate == 0:
+            save_checkpoint(epoch, model, model_type, optimizer, model_name)
     writer.close()
     return history
 
-def load_checkpoint(model_name, model_type, device):
+def load_checkpoint(model_name, model_type, device, reset):
     if not os.path.exists(os.path.join("ml", "train", model_type, "models")):
         os.mkdir(os.path.join("ml", "train", model_type, "models"))
     if model_type == "CNN":
@@ -176,14 +180,18 @@ def load_checkpoint(model_name, model_type, device):
     epoch0 = 0
     
     checkpoint_path = os.path.join("ml", "train", model_type, "models", model_name + ".pt")
+
     if os.path.exists(checkpoint_path):
-        try:
-            checkpoint = torch.load(checkpoint_path, weights_only=False)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            epoch0 = checkpoint['epoch'] + 1
-        except Exception as e:
-            print(f"Failed to load checkpoint: {e}")
+        if reset:
+            print("Model found at ", checkpoint_path, ": reset== True => overwriting model")
+        else:
+            try:
+                checkpoint = torch.load(checkpoint_path, weights_only=False)
+                model.load_state_dict(checkpoint['model_state_dict'])
+                optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                epoch0 = checkpoint['epoch'] + 1
+            except Exception as e:
+                print(f"Failed to load checkpoint: {e}")
     else:
         print(f"No checkpoint found at {checkpoint_path}")
     

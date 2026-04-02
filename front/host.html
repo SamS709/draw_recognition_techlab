@@ -1,55 +1,55 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Draw Duel Host</title>
+  <title>Ecran Draw Duel</title>
   <link rel="stylesheet" href="/styles/colors.css" />
   <link rel="stylesheet" href="/styles/host.css" />
 </head>
 <body>
   <main class="app">
     <section class="top">
-      <h1 class="headline" id="category">Category: waiting...</h1>
-      <div class="timer" id="timer">Waiting...</div>
-      <h2 class="top-epochs" id="epochs-info">Model epochs: not selected</h2>
+      <h1 class="headline" id="category">Categorie : en attente...</h1>
+      <div class="timer" id="timer">En attente...</div>
+      <h2 class="top-epochs" id="epochs-info">Epochs du modele : non selectionne</h2>
     </section>
 
     <section class="boards">
       <article class="board board-one">
         <header>
-          <h2>Player 1</h2>
-          <p class="status" id="p1-status">Disconnected - Not Ready</p>
+          <h2>Joueur 1</h2>
+          <p class="status" id="p1-status">Deconnecte - Pas pret</p>
         </header>
         <div class="canvas-wrap">
           <canvas id="canvas-1" width="900" height="900"></canvas>
         </div>
         <div class="player-controls">
-          <button id="clear-btn-1" class="secondary" type="button">Clear</button>
-          <button id="undo-btn-1" class="secondary" type="button">Undo Stroke</button>
-          <button id="send-btn-1" type="button">Force Predict</button>
+          <button id="clear-btn-1" class="secondary" type="button">Effacer</button>
+          <button id="undo-btn-1" class="secondary" type="button">Annuler trait</button>
+          <button id="send-btn-1" type="button">Forcer prediction</button>
         </div>
       </article>
 
       <aside class="pred-column" aria-label="Predictions">
         <div class="pred-stack">
-          <div class="pred pred-side pred-side-1"><ol id="pred-1"><li>Waiting for drawing</li></ol></div>
-          <div class="pred pred-side pred-side-2"><ol id="pred-2"><li>Waiting for drawing</li></ol></div>
+          <div class="pred pred-side pred-side-1"><ol id="pred-1"><li>Dessinez pour commencer les predictions</li></ol></div>
+          <div class="pred pred-side pred-side-2"><ol id="pred-2"><li>Dessinez pour commencer les predictions</li></ol></div>
         </div>
       </aside>
 
       <article class="board board-two">
         <header>
-          <h2>Player 2</h2>
-          <p class="status" id="p2-status">Disconnected - Not Ready</p>
+          <h2>Joueur 2</h2>
+          <p class="status" id="p2-status">Deconnecte - Pas pret</p>
         </header>
         <div class="canvas-wrap">
           <canvas id="canvas-2" width="900" height="900"></canvas>
         </div>
         <div class="player-controls">
-          <button id="clear-btn-2" class="secondary" type="button">Clear</button>
-          <button id="undo-btn-2" class="secondary" type="button">Undo Stroke</button>
-          <button id="send-btn-2" type="button">Force Predict</button>
+          <button id="clear-btn-2" class="secondary" type="button">Effacer</button>
+          <button id="undo-btn-2" class="secondary" type="button">Annuler trait</button>
+          <button id="send-btn-2" type="button">Forcer prediction</button>
         </div>
       </article>
     </section>

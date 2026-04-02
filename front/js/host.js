@@ -1,5 +1,350 @@
 const VIRTUAL_CANVAS_SIZE = 900;
-const DEFAULT_READY_HINT = "Round starts after both players confirm Ready in the popup";
+const DEFAULT_READY_HINT = "La manche demarre apres confirmation Pret des deux joueurs dans la fenetre";
+
+const CATEGORY_TRANSLATIONS_FR = {
+  "The Eiffel Tower": "Tour Eiffel",
+  "The Great Wall of China": "Grande Muraille de Chine",
+  "The Mona Lisa": "Joconde",
+  "animal migration": "migration animale",
+  "aircraft carrier": "porte-avions",
+  "alarm clock": "reveil",
+  "baseball bat": "batte de baseball",
+  "baseball": "balle de baseball",
+  "birthday cake": "gateau d'anniversaire",
+  "ceiling fan": "ventilateur de plafond",
+  "cell phone": "telephone portable",
+  "coffee cup": "tasse de cafe",
+  "cruise ship": "bateau de croisiere",
+  "diving board": "plongeoir",
+  "fire hydrant": "borne incendie",
+  "fire truck": "camion de pompiers",
+  "firetruck": "camion de pompiers",
+  "flip flops": "tongs",
+  "floor lamp": "lampe sur pied",
+  "flying saucer": "soucoupe volante",
+  "frying pan": "poele",
+  "garden hose": "tuyau d'arrosage",
+  "golf club": "club de golf",
+  "hot air balloon": "montgolfiere",
+  "hot dog": "hot dog",
+  "hot tub": "jacuzzi",
+  "house plant": "plante d'interieur",
+  "ice cream": "glace",
+  "light bulb": "ampoule",
+  "mailbox": "boite aux lettres",
+  "paper clip": "trombone",
+  "paint can": "pot de peinture",
+  "palm tree": "palmier",
+  "parachute": "parachute",
+  "pickup truck": "pickup",
+  "picture frame": "cadre photo",
+  "police car": "voiture de police",
+  "power outlet": "prise electrique",
+  "remote control": "telecommande",
+  "roller coaster": "montagnes russes",
+  "school bus": "bus scolaire",
+  "sea turtle": "tortue de mer",
+  "sleeping bag": "sac de couchage",
+  "snowman": "bonhomme de neige",
+  "speedboat": "bateau rapide",
+  "spider web": "toile d'araignee",
+  "sports car": "voiture de sport",
+  "streetlight": "lampadaire",
+  "table lamp": "lampe de table",
+  "tennis racquet": "raquette de tennis",
+  "toilet paper": "papier toilette",
+  "traffic light": "feu tricolore",
+  "washing machine": "machine a laver",
+  "wine bottle": "bouteille de vin",
+  "wine glass": "verre a vin",
+  "wristwatch": "montre",
+  "airplane": "avion",
+  "ambulance": "ambulance",
+  "angel": "ange",
+  "ant": "fourmi",
+  "anvil": "enclume",
+  "apple": "pomme",
+  "arm": "bras",
+  "asparagus": "asperge",
+  "axe": "hache",
+  "backpack": "sac a dos",
+  "banana": "banane",
+  "bandage": "bandage",
+  "barn": "grange",
+  "basket": "panier",
+  "basketball": "basket-ball",
+  "bat": "chauve-souris",
+  "bathtub": "baignoire",
+  "beach": "plage",
+  "bear": "ours",
+  "beard": "barbe",
+  "bed": "lit",
+  "bee": "abeille",
+  "belt": "ceinture",
+  "bench": "banc",
+  "bicycle": "velo",
+  "binoculars": "jumelles",
+  "bird": "oiseau",
+  "blackberry": "mure",
+  "blueberry": "myrtille",
+  "book": "livre",
+  "boomerang": "boomerang",
+  "bowtie": "noeud papillon",
+  "bracelet": "bracelet",
+  "brain": "cerveau",
+  "bread": "pain",
+  "bridge": "pont",
+  "broccoli": "brocoli",
+  "broom": "balai",
+  "bucket": "seau",
+  "bulldozer": "bulldozer",
+  "bus": "bus",
+  "bush": "buisson",
+  "butterfly": "papillon",
+  "cactus": "cactus",
+  "cake": "gateau",
+  "calculator": "calculatrice",
+  "calendar": "calendrier",
+  "camel": "chameau",
+  "camera": "camera",
+  "candle": "bougie",
+  "cannon": "canon",
+  "canoe": "canoe",
+  "car": "voiture",
+  "carrot": "carotte",
+  "castle": "chateau",
+  "cat": "chat",
+  "cello": "violoncelle",
+  "chair": "chaise",
+  "chandelier": "lustre",
+  "church": "eglise",
+  "circle": "cercle",
+  "clarinet": "clarinette",
+  "clock": "horloge",
+  "cloud": "nuage",
+  "compass": "boussole",
+  "computer": "ordinateur",
+  "cookie": "biscuit",
+  "cooler": "glaciere",
+  "couch": "canape",
+  "cow": "vache",
+  "crab": "crabe",
+  "crayon": "crayon",
+  "crocodile": "crocodile",
+  "crown": "couronne",
+  "cup": "tasse",
+  "diamond": "diamant",
+  "dishwasher": "lave-vaisselle",
+  "dog": "chien",
+  "dolphin": "dauphin",
+  "donut": "beignet",
+  "door": "porte",
+  "dragon": "dragon",
+  "dresser": "commode",
+  "drill": "perceuse",
+  "drums": "batterie",
+  "duck": "canard",
+  "dumbbell": "haltere",
+  "ear": "oreille",
+  "elbow": "coude",
+  "elephant": "elephant",
+  "envelope": "enveloppe",
+  "eraser": "gomme",
+  "eye": "oeil",
+  "eyeglasses": "lunettes",
+  "face": "visage",
+  "fan": "ventilateur",
+  "feather": "plume",
+  "fence": "cloture",
+  "finger": "doigt",
+  "fireplace": "cheminee",
+  "fish": "poisson",
+  "flamingo": "flamant rose",
+  "flashlight": "lampe torche",
+  "flower": "fleur",
+  "foot": "pied",
+  "fork": "fourchette",
+  "frog": "grenouille",
+  "garden": "jardin",
+  "giraffe": "girafe",
+  "grapes": "raisin",
+  "grass": "herbe",
+  "guitar": "guitare",
+  "hamburger": "hamburger",
+  "hammer": "marteau",
+  "hand": "main",
+  "harp": "harpe",
+  "hat": "chapeau",
+  "headphones": "casque audio",
+  "hedgehog": "herisson",
+  "helicopter": "helicoptere",
+  "helmet": "casque",
+  "hexagon": "hexagone",
+  "horse": "cheval",
+  "hospital": "hopital",
+  "hourglass": "sablier",
+  "house": "maison",
+  "hurricane": "ouragan",
+  "jacket": "veste",
+  "jail": "prison",
+  "kangaroo": "kangourou",
+  "key": "cle",
+  "keyboard": "clavier",
+  "knee": "genou",
+  "knife": "couteau",
+  "ladder": "echelle",
+  "lantern": "lanterne",
+  "laptop": "ordinateur portable",
+  "leaf": "feuille",
+  "leg": "jambe",
+  "lighter": "briquet",
+  "lighthouse": "phare",
+  "lightning": "eclair",
+  "line": "ligne",
+  "lion": "lion",
+  "lipstick": "rouge a levres",
+  "lobster": "homard",
+  "lollipop": "sucette",
+  "map": "carte",
+  "marker": "marqueur",
+  "matches": "allumettes",
+  "megaphone": "megaphone",
+  "mermaid": "sirene",
+  "microphone": "microphone",
+  "microwave": "micro-ondes",
+  "monkey": "singe",
+  "moon": "lune",
+  "mosquito": "moustique",
+  "motorbike": "moto",
+  "mountain": "montagne",
+  "mouse": "souris",
+  "moustache": "moustache",
+  "mouth": "bouche",
+  "mug": "mug",
+  "mushroom": "champignon",
+  "nail": "clou",
+  "necklace": "collier",
+  "nose": "nez",
+  "ocean": "ocean",
+  "octagon": "octogone",
+  "octopus": "pieuvre",
+  "onion": "oignon",
+  "oven": "four",
+  "owl": "hibou",
+  "panda": "panda",
+  "pants": "pantalon",
+  "parrot": "perroquet",
+  "passport": "passeport",
+  "peanut": "cacahuete",
+  "pear": "poire",
+  "peas": "petits pois",
+  "pencil": "crayon a papier",
+  "penguin": "pingouin",
+  "piano": "piano",
+  "pig": "cochon",
+  "pillow": "oreiller",
+  "pineapple": "ananas",
+  "pizza": "pizza",
+  "pliers": "pince",
+  "pond": "etang",
+  "pool": "piscine",
+  "popsicle": "glace baton",
+  "postcard": "carte postale",
+  "potato": "pomme de terre",
+  "purse": "sac a main",
+  "rabbit": "lapin",
+  "raccoon": "raton laveur",
+  "radio": "radio",
+  "rain": "pluie",
+  "rainbow": "arc-en-ciel",
+  "rake": "rateau",
+  "rhinoceros": "rhinoceros",
+  "rifle": "fusil",
+  "river": "riviere",
+  "rollerskates": "patins a roulettes",
+  "sailboat": "voilier",
+  "sandwich": "sandwich",
+  "saw": "scie",
+  "saxophone": "saxophone",
+  "scissors": "ciseaux",
+  "scorpion": "scorpion",
+  "screwdriver": "tournevis",
+  "shark": "requin",
+  "sheep": "mouton",
+  "shoe": "chaussure",
+  "shorts": "short",
+  "sink": "evier",
+  "skateboard": "skateboard",
+  "skull": "crane",
+  "skyscraper": "gratte-ciel",
+  "snail": "escargot",
+  "snake": "serpent",
+  "snorkel": "tuba",
+  "snowflake": "flocon de neige",
+  "soccer ball": "ballon de football",
+  "sock": "chaussette",
+  "spoon": "cuillere",
+  "spreadsheet": "tableur",
+  "square": "carre",
+  "star": "etoile",
+  "steak": "steak",
+  "stereo": "chaine hifi",
+  "stethoscope": "stethoscope",
+  "stitches": "points de suture",
+  "stop sign": "panneau stop",
+  "stove": "cuisiniere",
+  "strawberry": "fraise",
+  "submarine": "sous-marin",
+  "suitcase": "valise",
+  "sun": "soleil",
+  "swan": "cygne",
+  "sweater": "pull",
+  "swing set": "balancoire",
+  "sword": "epee",
+  "syringe": "seringue",
+  "t-shirt": "t-shirt",
+  "teapot": "theiere",
+  "teddy-bear": "ours en peluche",
+  "telephone": "telephone",
+  "television": "television",
+  "tent": "tente",
+  "toaster": "grille-pain",
+  "toe": "orteil",
+  "toilet": "toilettes",
+  "tooth": "dent",
+  "toothbrush": "brosse a dents",
+  "toothpaste": "dentifrice",
+  "tornado": "tornade",
+  "tractor": "tracteur",
+  "train": "train",
+  "tree": "arbre",
+  "triangle": "triangle",
+  "trombone": "trombone",
+  "truck": "camion",
+  "trumpet": "trompette",
+  "umbrella": "parapluie",
+  "underwear": "sous-vetements",
+  "van": "fourgon",
+  "vase": "vase",
+  "violin": "violon",
+  "watermelon": "pasteque",
+  "wheel": "roue",
+  "windmill": "moulin a vent",
+  "yoga": "yoga",
+  "zebra": "zebre"
+};
+
+function translateCategoryToFrench(category) {
+  if (!category) {
+    return "en attente...";
+  }
+  const raw = String(category).trim();
+  const direct = CATEGORY_TRANSLATIONS_FR[raw] || CATEGORY_TRANSLATIONS_FR[raw.toLowerCase()];
+  if (direct) {
+    return direct;
+  }
+  return raw;
+}
 
 const urlEpochs = new URLSearchParams(window.location.search).get("n_epochs");
 const storedEpochs = localStorage.getItem("selectedEpochs");
@@ -18,8 +363,8 @@ const readyHintEl = document.getElementById("ready-hint");
 
 if (epochsInfoEl) {
   epochsInfoEl.textContent = selectedEpochs
-    ? `Model epochs: ${selectedEpochs}`
-    : "Model epochs: not selected";
+    ? `Epochs du modele : ${selectedEpochs}`
+    : "Epochs du modele : non selectionne";
 }
 if (readyHintEl) {
   readyHintEl.textContent = DEFAULT_READY_HINT;
@@ -71,14 +416,14 @@ function refreshPlayerStatus(playerId) {
   const p = players[playerId];
   if (!p || !p.statusEl) return;
   if (!p.connected) {
-    p.statusEl.textContent = "Disconnected - Not Ready";
+    p.statusEl.textContent = "Deconnecte - Pas pret";
     return;
   }
   if (inGame) {
-    p.statusEl.textContent = "Connected - In game";
+    p.statusEl.textContent = "Connecte - En jeu";
     return;
   }
-  p.statusEl.textContent = p.ready ? "Connected - Ready" : "Connected - Not Ready";
+  p.statusEl.textContent = p.ready ? "Connecte - Pret" : "Connecte - Pas pret";
 }
 
 function setPrediction(playerId, top) {
@@ -87,13 +432,13 @@ function setPrediction(playerId, top) {
   p.predEl.innerHTML = "";
   if (!top || !top.length) {
     const li = document.createElement("li");
-    li.textContent = "Draw to start predictions";
+    li.textContent = "Dessinez pour commencer les predictions";
     p.predEl.appendChild(li);
     return;
   }
   top.forEach((item) => {
     const li = document.createElement("li");
-    li.textContent = `${item.category} (${(item.confidence * 100).toFixed(1)}%)`;
+    li.textContent = `${translateCategoryToFrench(item.category)} (${(item.confidence * 100).toFixed(1)}%)`;
     p.predEl.appendChild(li);
   });
 }
@@ -285,13 +630,13 @@ function createReadyGateModal() {
   modal.className = "overlay-modal";
   modal.innerHTML = `
     <div class="overlay-card">
-      <h2>Players Ready?</h2>
-      <p class="overlay-text">Both players must tap Ready to start the round. Selected epochs: <strong>${selectedEpochs || "none"}</strong>.</p>
+      <h2>Joueurs prets ?</h2>
+      <p class="overlay-text">Les deux joueurs doivent valider Pret pour demarrer la manche. Epochs selectionnees : <strong>${selectedEpochs || "aucune"}</strong>.</p>
       <div class="ready-grid">
-        <button id="popup-ready-btn-1" class="overlay-btn secondary" type="button">Player 1 Ready</button>
-        <button id="popup-ready-btn-2" class="overlay-btn secondary" type="button">Player 2 Ready</button>
+        <button id="popup-ready-btn-1" class="overlay-btn secondary" type="button">Joueur 1 Pret</button>
+        <button id="popup-ready-btn-2" class="overlay-btn secondary" type="button">Joueur 2 Pret</button>
       </div>
-      <p class="overlay-text" id="ready-popup-hint">Waiting for both players...</p>
+      <p class="overlay-text" id="ready-popup-hint">En attente des deux joueurs...</p>
     </div>
   `;
   document.body.appendChild(modal);
@@ -315,11 +660,11 @@ function createEndRoundModal() {
   modal.className = "overlay-modal";
   modal.innerHTML = `
     <div class="overlay-card">
-      <h2>Round Finished</h2>
-      <p class="overlay-text">What do you want to do next?</p>
+      <h2>Manche terminee</h2>
+      <p class="overlay-text">Que voulez-vous faire ensuite ?</p>
       <div class="ready-grid">
-        <button id="play-again-btn" class="overlay-btn" type="button">Play again</button>
-        <button id="home-page-btn" class="overlay-btn secondary" type="button">Home page</button>
+        <button id="play-again-btn" class="overlay-btn" type="button">Rejouer</button>
+        <button id="home-page-btn" class="overlay-btn secondary" type="button">Accueil</button>
       </div>
     </div>
   `;
@@ -362,18 +707,18 @@ function refreshReadyGateButtons() {
   btn1.classList.toggle("active", readyGateState.acknowledged[1]);
   btn2.classList.toggle("active", readyGateState.acknowledged[2]);
 
-  btn1.textContent = readyGateState.acknowledged[1] ? "Player 1 Ready ✓" : "Player 1 Ready";
-  btn2.textContent = readyGateState.acknowledged[2] ? "Player 2 Ready ✓" : "Player 2 Ready";
+  btn1.textContent = readyGateState.acknowledged[1] ? "Joueur 1 Pret ✓" : "Joueur 1 Pret";
+  btn2.textContent = readyGateState.acknowledged[2] ? "Joueur 2 Pret ✓" : "Joueur 2 Pret";
 
   if (!p1Connected || !p2Connected) {
-    hint.textContent = "Waiting for both player connections...";
+    hint.textContent = "En attente de la connexion des deux joueurs...";
     return;
   }
   if (readyGateState.acknowledged[1] && readyGateState.acknowledged[2]) {
-    hint.textContent = "Starting round...";
+    hint.textContent = "Demarrage de la manche...";
     return;
   }
-  hint.textContent = "Waiting for both players...";
+  hint.textContent = "En attente des deux joueurs...";
 }
 
 function closeReadyGate() {
@@ -473,21 +818,21 @@ socketP1.on("round_state", (payload) => {
   const activeEpochs = payload.nEpochs ?? selectedEpochs;
   if (epochsInfoEl) {
     epochsInfoEl.textContent = activeEpochs
-      ? `Model epochs: ${activeEpochs}`
-      : "Model epochs: not selected";
+      ? `Epochs du modele : ${activeEpochs}`
+      : "Epochs du modele : non selectionne";
   }
   if (readyHintEl) {
     readyHintEl.textContent = payload.roundDurationSeconds
-      ? `Round time: ${payload.roundDurationSeconds}s. ${DEFAULT_READY_HINT}`
+      ? `Duree de manche : ${payload.roundDurationSeconds}s. ${DEFAULT_READY_HINT}`
       : DEFAULT_READY_HINT;
   }
 
   const epochText = payload.nEpochs ? ` | Epochs: ${payload.nEpochs}` : "";
-  categoryEl.textContent = `Category: ${payload.category || "waiting..."}`;
+  categoryEl.textContent = `Categorie : ${translateCategoryToFrench(payload.category)}`;
   if (payload.remainingSeconds != null) {
     timerEl.textContent = `${payload.remainingSeconds}s`;
   } else {
-    timerEl.textContent = "Waiting";
+    timerEl.textContent = "En attente";
   }
 
   const nextInGame = payload.remainingSeconds != null && payload.remainingSeconds > 0;
@@ -519,7 +864,7 @@ socketP1.on("epoch_selection_required", (payload = {}) => {
   const hasValidCurrent = Number.isInteger(currentEpoch) && availableEpochs.includes(currentEpoch);
   if (!hasValidCurrent) {
     if (readyHintEl) {
-      readyHintEl.textContent = "No valid epoch selected. Return to home and choose epochs first.";
+      readyHintEl.textContent = "Aucune epoch valide selectionnee. Revenez a l'accueil et choisissez d'abord des epochs.";
     }
     socketP1.emit("player_ready", { playerId: 1, ready: false });
     socketP2.emit("player_ready", { playerId: 2, ready: false });
@@ -532,7 +877,7 @@ socketP1.on("epoch_selection_required", (payload = {}) => {
   selectedEpochs = String(currentEpoch);
   localStorage.setItem("selectedEpochs", selectedEpochs);
   if (epochsInfoEl) {
-    epochsInfoEl.textContent = `Model epochs: ${selectedEpochs}`;
+    epochsInfoEl.textContent = `Epochs du modele : ${selectedEpochs}`;
   }
   const readyGateModal = document.getElementById("ready-gate-modal");
   if (readyGateModal) {
@@ -546,7 +891,7 @@ socketP1.on("epoch_selection_required", (payload = {}) => {
 });
 
 socketP1.on("model_selection_error", (payload = {}) => {
-  const message = payload.message || "Selected epoch model is unavailable.";
+  const message = payload.message || "Le modele correspondant aux epochs selectionnees est indisponible.";
   if (readyHintEl) {
     readyHintEl.textContent = message;
   }

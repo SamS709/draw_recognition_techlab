@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Draw Duel Home</title>
+  <title>Accueil Draw Duel</title>
   <link rel="stylesheet" href="/styles/colors.css" />
   <link rel="stylesheet" href="/styles/home.css" />
 </head>
@@ -11,27 +11,27 @@
   <main class="home-wrap">
     <section class="hero">
       <h1>PICTIONN/AI\RY</h1>
-      <p class="subtitle">Choose training epochs, then launch one game screen with two player canvases.</p>
+      <p class="subtitle">Choisissez les epochs d'entraînement, puis lancez un écran de jeu avec deux zones de dessin.</p>
     </section>
 
-    <section class="panel levels" aria-label="Epoch selector">
-      <h2>Model Training</h2>
+    <section class="panel levels" aria-label="Sélecteur d'epochs">
+      <h2>Entraînement du modèle</h2>
       <p class="epoch-row">
-        Play against an AI trained during
-        <select id="epochs-select" class="epoch-select" aria-label="Epoch selection">
+        Jouez contre une IA entraînée pendant
+        <select id="epochs-select" class="epoch-select" aria-label="Sélection d'epochs">
           <option value="" selected hidden></option>
         </select>
         epochs.
       </p>
       <p class="explain" id="level-explain"></p>
-      <button id="start-game-btn" class="start-btn" type="button" disabled>Start Game</button>
+      <button id="start-game-btn" class="start-btn" type="button" disabled>Lancer la partie</button>
     </section>
 
     <section class="panel">
-      <h2>How Epochs Behave</h2>
+      <h2>Effet des epochs</h2>
       <ul>
-        <li><strong>Higher epochs</strong>: trained longer, usually recognizes drawings faster and more accurately.</li>
-        <li><strong>Lower epochs</strong>: trained less, needs clearer drawings and guesses less reliably.</li>
+        <li><strong>Plus d'epochs</strong> : entraînement plus long, reconnaissance généralement plus rapide et plus précise.</li>
+        <li><strong>Moins d'epochs</strong> : entraînement plus court, nécessite des dessins plus clairs et devine moins bien.</li>
       </ul>
     </section>
   </main>

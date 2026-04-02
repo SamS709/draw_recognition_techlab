@@ -35,19 +35,19 @@ function renderSelection() {
   startBtn.disabled = !hasChoice;
 
   if (!availableEpochs.length) {
-    explainEl.textContent = "No epoch-trained model pairs were found. Add GRU_[n]_jit.pt and CNN_[n]_jit.pt files in python/ml/models.";
+    explainEl.textContent = "Aucune paire de modeles entrainee par epochs n'a ete trouvee. Ajoutez les fichiers GRU_[n]_jit.pt et CNN_[n]_jit.pt dans python/ml/models.";
     return;
   }
 
   if (!hasChoice) {
-    explainEl.textContent = "Scroll and choose a number of epochs to start the game.";
+    explainEl.textContent = "Faites defiler et choisissez un nombre d'epochs pour lancer la partie.";
     return;
   }
 
   const timingText = Number.isFinite(roundSeconds) && roundSeconds > 0
-    ? ` Round timer: ${Math.round(roundSeconds)}s.`
+    ? ` Duree de manche : ${Math.round(roundSeconds)}s.`
     : "";
-  explainEl.textContent = `Selected model: ${selectedEpochs} training epochs.${timingText}`;
+  explainEl.textContent = `Modele selectionne : ${selectedEpochs} epochs d'entrainement.${timingText}`;
 }
 
 async function loadGameConfig() {
@@ -65,7 +65,7 @@ async function loadGameConfig() {
     }
     roundSeconds = Number(config.roundSeconds);
   } catch (error) {
-    console.warn("Could not load /game-config.", error);
+    console.warn("Impossible de charger /game-config.", error);
   }
 
   rebuildEpochOptions();

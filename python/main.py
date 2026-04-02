@@ -159,7 +159,7 @@ def on_select_n_epochs(payload):
     available_epochs = set(get_available_epochs())
     if selected_epochs is None or selected_epochs not in available_epochs:
         emit('model_selection_error', {
-            "message": "Selected epoch model is unavailable.",
+            "message": "Le modele correspondant aux epochs selectionnees est indisponible.",
             "availableEpochs": sorted(available_epochs),
         }, to=request.sid)
         game_state["awaiting_epochs"] = False
