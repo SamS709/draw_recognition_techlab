@@ -1,5 +1,6 @@
-*/__pycache__/
+**/__pycache__/
 **/runs/
 **/models/
 !python/ml/models/
 **/quickdraw_simplified/
+commands.txt

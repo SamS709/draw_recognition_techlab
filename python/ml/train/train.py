@@ -9,8 +9,19 @@ from .utils import load_checkpoint, train, build_loaders
 """
 To train a new model:
 cd python
-python -m ml.train.CNN.train --model-name MyCNNModel --model-type CNN --device cpu
+python -m ml.train.train --model-name MyCNNModel --model-type CNN --device cuda --reset true
 """
+
+
+def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
+    value = value.lower()
+    if value in {"true", "1", "yes", "y", "on"}:
+        return True
+    if value in {"false", "0", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(f"Invalid boolean value: {value}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train image captioning model")
@@ -23,6 +34,12 @@ def parse_args():
         "--model-type",
         default="cuda",
         help="CNN ro GRU: corresponds to the type of model to train.",
+    )
+    parser.add_argument(
+        "--reset",
+        type=str_to_bool,
+        default=False,
+        help="If the training of the model with name model-name should be reset.",
     )
     parser.add_argument(
         "--device",
@@ -45,7 +62,8 @@ if __name__ == "__main__":
     model_name = args.model_name
     model_type = args.model_type
     device = args.device
-    model, optimizer, epoch0 = load_checkpoint(model_name, model_type, device)
+    reset = args.reset
+    model, optimizer, epoch0 = load_checkpoint(model_name, model_type, device, reset)
 
     loss_fn = nn.CrossEntropyLoss().to(device)
     metric = torchmetrics.Accuracy(task='multiclass', num_classes=NUM_CLASS).to(device)
